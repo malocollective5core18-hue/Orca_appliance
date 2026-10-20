@@ -1,8 +1,9 @@
-# ORCA web and intended central service
+# ORCA web and central service foundation
 
-This folder groups ORCA public web and dashboard prototypes. The owner intends the webserver project to become the central service for all ORCA software. **The current checked-in code is not that production service yet:** this folder contains static HTML prototypes and media, but no API server, backend package, database migrations, payment integration, or device service was found in the repository snapshot.
+This folder contains the ORCA public web and dashboard prototypes plus the Phase 1 Django server skeleton. The Django skeleton is not yet the production service: it has a custom account model, settings, health endpoints and deployment scaffolding, but no customer login, API, partner/finance/payment/device domain, or production credentials.
 
 See the root [system architecture](../SYSTEM-ARCHITECTURE.md) for the complete target architecture and interactions with mobile and TV.
+See [`docs/PHASE0_REPORT.md`](docs/PHASE0_REPORT.md), [`docs/DECISIONS.md`](docs/DECISIONS.md), and [`docs/PHASE1_REPORT.md`](docs/PHASE1_REPORT.md) for approved scope, decisions, and verification evidence.
 
 ## Files currently present
 
@@ -10,6 +11,9 @@ See the root [system architecture](../SYSTEM-ARCHITECTURE.md) for the complete t
 - `indexb.html` — another public marketing-page variant. Which version is canonical for deployment is **UNVERIFIED**.
 - `orca-dashboard-demo-1.html` — browser dashboard demonstration with overview, device, payment, alert, partner, and audit-style views. It generates sample records locally in JavaScript. The only observed use of `localStorage` is the dashboard theme preference; business data is not fetched from an API.
 - `logo.png`, `orca-logo-B.png`, `orca-logo-w.png`, `bc2.png`, and `VID-20261015-WA0031.mp4` — visual/media assets. Their licensing, source-of-truth versions, and production use approval are **UNVERIFIED**.
+- `manage.py`, `config/`, and `apps/accounts/` — Phase 1 Django project skeleton. Only the custom `accounts.User` model is implemented; SMS OTP, staff TOTP, device credentials, and API permissions are deferred.
+- `render.yaml`, `requirements*.txt`, and `scripts/ci.sh` — Render draft, direct dependency pins, and local CI commands. The dependency set is not a complete hashed lock, the Render service was not created, and GitHub Actions cannot be placed under this folder-only write scope.
+- `docs/DECISIONS.md`, `docs/DEPLOY_RENDER.md`, and `docs/SUPABASE_DATA_API_LOCKDOWN.md` — approved decisions and human-operated deployment/security drafts. No live provider/database actions were run.
 
 The public pages' actual publishing host, form handling, analytics, canonical page, and production URLs are **UNVERIFIED**. The demo dashboard must not be represented as a live financial or device-control console.
 
@@ -36,7 +40,7 @@ A future implementation should separate logical modules even if they are initial
 6. Staff dashboard API, audit, support actions, and safe reporting.
 7. Versioned OpenAPI contract for web/mobile clients and a separate authenticated device protocol.
 
-Actual backend framework, database, API hostname, payment provider, device broker/protocol, cloud account, and production environment are **UNVERIFIED**. Do not create client assumptions from this list; obtain the backend owner's approved design first.
+The backend framework (Django), host (Render), and database provider (Supabase PostgreSQL, database only) are approved. Actual service URLs, Render/Supabase accounts, connection mode, credentials, plans, API hostname, payment merchant setup and production environment are **UNVERIFIED**. Do not create client assumptions from this list; read [`docs/DECISIONS.md`](docs/DECISIONS.md) and obtain the approved server contract in a later phase.
 
 ## Required communication patterns
 
@@ -48,8 +52,8 @@ Actual backend framework, database, API hostname, payment provider, device broke
 
 Detailed customer endpoint proposal and open questions are in [`../orca_mobile/docs/api-contract.md`](../orca_mobile/docs/api-contract.md); it is not yet approved or implemented.
 
-## Implementation gates
+## Current implementation gates
 
-Before this folder is called a live webserver, add and document the actual backend project, local/staging/production configuration, database and migration process, health/readiness endpoints, CI, auth, API schema, deployment/build/start commands, secrets management, backup/restore, monitoring, audit, and test fixtures. Keep marketing HTML static if appropriate, and keep demo fixtures clearly separated from real customer data. Never reuse dashboard demo sample values as production defaults.
+Phase 1 added local/staging/production settings, initial custom-user migration, `/healthz`, `/readyz`, a server-side database URL parser, safe JSON request logs, a Render Blueprint draft, and local CI commands. Django tests use isolated SQLite; no Postgres or Supabase connection was tested. Before calling this a live webserver, add GitHub Actions after root-level scope approval, complete dependency audit/hash locking, select SMS vendor, implement approved auth/MFA and API/domain phases, verify Supabase lockdown/backups, and complete legal/security review. Keep marketing HTML static if appropriate, and keep demo fixtures separate from real customer data. Never reuse dashboard demo sample values as production defaults.
 
 Coordinate breaking API changes with Flutter and TV owners. For each release, document compatible client versions, staged rollout, schema migration order, rollback, and test evidence in the root architecture/release notes.

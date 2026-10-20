@@ -1,0 +1,40 @@
+# This Blueprint lives below the repository root; select this file explicitly
+# when connecting the service, then verify Root Directory is orca_webserver.
+services:
+  - type: web
+    name: orca-cloud
+    runtime: python
+    plan: starter
+    rootDir: orca_webserver
+    buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput
+    preDeployCommand: python manage.py migrate --noinput
+    startCommand: gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --threads 4 --timeout 120
+    healthCheckPath: /healthz
+    autoDeploy: false
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.14.8
+      - key: DJANGO_SETTINGS_MODULE
+        value: config.settings.production
+      - key: DEBUG
+        value: "false"
+      - key: DATABASE_CONNECTION_MODE
+        value: session
+      - key: DB_CONN_MAX_AGE
+        value: "60"
+      - key: DISABLE_SERVER_SIDE_CURSORS
+        value: "false"
+      - key: PAYMENTS_LIVE_ENABLED
+        value: "false"
+      - key: SMS_BACKEND
+        value: console
+      - key: LOG_LEVEL
+        value: INFO
+      - key: DJANGO_SECRET_KEY
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: ALLOWED_HOSTS
+        sync: false
+      - key: CSRF_TRUSTED_ORIGINS
+        sync: false
