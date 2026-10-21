@@ -1,105 +1,137 @@
-# Render deployment draft — human-operated, not deployed
+# Friendly Render deployment guide for ORCA
 
-**Status:** Draft. No Render service, Supabase project, secret, build, migration, or deployment was
-created or changed in this phase.
+**Purpose:** deploy an isolated ORCA Cloud foundation preview for the owner and developers to inspect. This guide does not make ORCA production-ready. No Render service, database, secret, payment, or deployment was created while writing it.
 
-## Nested Blueprint path verified 21 October 2026
+## First, know what you are deploying
 
-Render's official docs say a Blueprint YAML file may live anywhere in the repository when its path
-is selected during Blueprint creation or changed in Blueprint settings. Without that selection,
-Render defaults to root `render.yaml`. The existing file is `orca_webserver/render.yaml`; select that
-exact path. Its `rootDir: orca_webserver` is a separate setting that makes build/start commands
-relative to the app folder. The dashboard configuration for this repository remains **UNVERIFIED**.
+The current Django app is a backend foundation. Its registered routes are `/healthz`, `/readyz`, and Django admin at `/admin/`. It does **not** yet include customer/staff product APIs, an operational staff dashboard, customer sign-in, MFA enforcement, or real SMS, ClickPesa, Cloudinary/object-storage, or TV device connections. The HTML dashboard and Flutter/TV apps remain demos and do not connect to this server.
 
-- [Render Blueprints (IaC)](https://render.com/docs/infrastructure-as-code)
-- [Blueprints now support custom filenames and paths](https://render.com/changelog/blueprints-now-support-custom-filenames-and-paths)
-- [Render monorepo support](https://render.com/docs/monorepo-support)
+Use only synthetic preview data. Do not invite customers, accept payments, upload business-critical images, or treat Django admin as the finished ORCA product. Do not put Cloudinary, ClickPesa, or `DJANGO_SUPERUSER_*` values into Render: the current app does not use them.
 
-The custom path feature was announced 9 February 2026. Do not create a second root Blueprint that
-manages the same service.
+## Before you start
 
-Phase 2 defaults select demo/local adapters. Render production settings now refuse to start unless
-`ALLOW_DEMO_BACKENDS=true` is explicitly supplied. Set it only for an owner-designated demo/staging
-service. No real payment, SMS, cloud storage, or MQTT adapter exists yet. Keep it unset/false for any
-service presented as live; startup then refuses until later approved real adapters are implemented.
+- [ ] Confirm you have access to the GitHub repository `malocollective5core18-hue/Orca_appliance`.
+- [ ] Pick the exact branch and commit you intend to preview. Check the GitHub branch page first; this guide does not confirm which branch has the latest code.
+- [ ] Confirm the Render plan and monthly cost with the owner. The Blueprint currently says `starter`; Render plan names/prices can change. Do not create a paid resource until the cost is approved.
+- [ ] Choose whether this is only an isolated preview. The current adapters are demo/local backends. Do not present it as a live service.
+- [ ] Prepare a separate database for this preview. The repository guidance currently targets a Supabase **session pooler**, but its compatibility, region, plan and backup policy must be checked in the owner’s Supabase account.
+- [ ] Keep the GitHub repository and database private to authorized developers. Use synthetic records only.
 
-## Before connecting a repository
+## What the Blueprint configures
 
-1. Confirm the repository is the intended ORCA repo and select `orca_webserver/render.yaml` as the
-   Blueprint path in Render. Confirm service Root Directory is `orca_webserver` in the dashboard.
-   The custom path is documented by Render; this repository's imported Blueprint configuration is
-   still **UNVERIFIED**. Do not make a root file without separate owner approval.
-2. Review the `starter` paid-plan draft against the approved budget and current Render pricing. Do not
-   provision it until the owner accepts charges. Production must be paid and always on. Staging must
-   be a separate Render service.
-3. Create separate staging and production Supabase projects. Keep credentials and databases
-   separate. Confirm backup and point-in-time recovery entitlements for production.
-4. Apply `docs/SUPABASE_DATA_API_LOCKDOWN.md` in staging and verify its access-denial test.
-5. Confirm Render outbound connectivity to Supabase. Use its session pooler, not transaction mode.
+The file is [`render.yaml`](../render.yaml). It lives under `orca_webserver/`, so during Render Blueprint setup select this exact file path. Its `rootDir: orca_webserver` means commands run from that folder. Do not create a second Blueprint for the same service.
 
-## Build, release and start commands
+Configured commands:
 
-The Blueprint draft uses:
+| Stage | Command | Purpose |
+|---|---|---|
+| Build | `pip install -r requirements.txt && python manage.py collectstatic --noinput` | Install pinned runtime packages and prepare static assets. |
+| Pre-deploy | `python manage.py migrate --noinput` | Apply schema changes before the new instance receives traffic. |
+| Start | `gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --threads 4 --timeout 120` | Serve Django on Render’s assigned port. |
+| Health | `/healthz` | Return an empty `204` when the process responds. It does not prove the database is ready. |
+
+Render documents that a pre-deploy command runs before release and a failing build/pre-deploy/start prevents the new deploy from replacing the current working deploy. Review migration changes and keep an owner-managed rollback plan. [Render deploy steps](https://render.com/docs/deploys) · [Blueprint reference](https://render.com/docs/blueprint-spec)
+
+## Step 1 — Create the isolated database
+
+1. In the owner’s Supabase organization, create a **separate preview project**. Do not reuse production or personal customer data.
+2. Use the database connection panel to obtain the PostgreSQL **session pooler** URL. Keep the URL private; it contains a password.
+3. Confirm the selected pooler uses a supported port and SSL. The app rejects transaction-pooler port `6543` and requires SSL in production settings.
+4. Confirm backups/recovery are suitable for a disposable preview. A preview database is not a backup plan.
+
+If Supabase is not available, stop and ask the owner before changing database provider or the approved connection mode. Do not paste a database URL into chat, a GitHub issue, a document, or a command that will be saved in shell history.
+
+## Step 2 — Connect the repository in Render
+
+1. Open Render and choose **New → Blueprint**.
+2. Connect `malocollective5core18-hue/Orca_appliance` and choose the approved branch.
+3. Select `orca_webserver/render.yaml` as the Blueprint file. Confirm the Root Directory is `orca_webserver`.
+4. Review the proposed service name, instance plan, build, pre-deploy and start commands. Confirm any cost before applying.
+5. Keep automatic deploys disabled for the first preview. Review each commit and deploy manually.
+6. Apply only after the owner confirms repository branch, database, plan and isolated-preview purpose.
+
+Render supports selecting a Blueprint file path and a service root directory; verify the values in the dashboard after import. [Render Blueprints](https://render.com/docs/infrastructure-as-code) · [Monorepo root directories](https://render.com/docs/monorepo-support)
+
+## Step 3 — Set environment variables in Render
+
+Open the service’s **Environment** page. Enter values there; do not upload the local `.env`. Django reads process environment variables directly and does not load `.env` or `.env.example`.
+
+The Blueprint supplies non-secret defaults such as settings module, `DEBUG=false`, Python version and adapter selectors. Set/confirm these required values separately for this preview:
+
+| Variable | Preview value / guidance |
+|---|---|
+| `DJANGO_SETTINGS_MODULE` | `config.settings.production` (Blueprint default). |
+| `DJANGO_SECRET_KEY` | Generate a unique random value of at least 50 characters using Render’s Generate option or a trusted local generator. Never reuse the local example key. |
+| `DATABASE_URL` | Private SSL-enabled session-pooler URL from the separate preview database. |
+| `DATABASE_CONNECTION_MODE` | `session` (Blueprint default; required by production settings). |
+| `ALLOWED_HOSTS` | Exact Render hostname, such as `service-name.onrender.com`, without scheme/path; comma-separate approved custom hosts. No `*`. |
+| `CSRF_TRUSTED_ORIGINS` | Exact HTTPS origins, e.g. `https://service-name.onrender.com`; comma-separate approved origins. |
+| `ALLOW_DEMO_BACKENDS` | Set `true` only for this explicitly isolated, owner-approved demo preview. This permits the configured fake/local adapters. Never mistake it for production integration approval. |
+
+Also check `DB_CONN_MAX_AGE=60`, `DISABLE_SERVER_SIDE_CURSORS=false`, `PAYMENTS_LIVE_ENABLED=false`, `PAYMENTS_PROVIDER=fake_clickpesa`, `STORAGE_BACKEND=local`, `SMS_BACKEND=console`, `DEVICE_TRANSPORT=database`, and `LOG_LEVEL=INFO`. Keep all payment and messaging behavior fake/local. Do not add real provider credentials.
+
+Render environment variables are service settings and can trigger a new deploy when changed; review the resulting deploy before relying on it. [Render environment variables](https://render.com/docs/configure-environment-variables)
+
+## Step 4 — Deploy and watch the logs
+
+1. Start the deploy from the reviewed branch/SHA.
+2. Watch the build stage. It must install `requirements.txt` and finish `collectstatic`.
+3. Watch pre-deploy. `migrate --noinput` must finish successfully.
+4. Watch startup. Gunicorn must bind to `0.0.0.0:$PORT`; Django must not exit with a missing/invalid setting error.
+5. Record the branch, commit SHA, deploy time, and pass/fail result. Never copy secret values, database URLs, or request data into the report.
+
+A successful build only means the configured build command completed. A successful deploy does not prove product journeys or integrations exist.
+
+## Step 5 — Safe smoke check
+
+Replace `<service-host>` with the public hostname; do not include angle brackets in the command.
 
 ```sh
-pip install -r requirements.txt && python manage.py collectstatic --noinput
-python manage.py migrate --noinput
-gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --threads 4 --timeout 120
+curl -i https://<service-host>/healthz
+curl -i https://<service-host>/readyz
 ```
 
-The first command runs at build time and does not connect to the database. Migrations run in
-`preDeployCommand`, which Render documents for paid web services. If the selected service cannot run
-pre-deploy commands, stop and get an owner-approved migration job/release procedure; never migrate
-silently during build or on every Gunicorn worker start. Review destructive migration plans and
-rollback before applying any future schema change.
+Expected:
 
-**Log note:** Gunicorn access logging is disabled so URL paths and query strings are not logged.
-Only the Django safe request logger emits method, status, and a server-generated request ID.
+- `/healthz`: `204 No Content`, empty body. This is Render’s configured process health check.
+- `/readyz`: `204 No Content` when the database connection works, or a generic `503` when it does not. It must not expose database exception details.
+- `https://<service-host>/admin/`: Django admin login page may load. This is framework administration, not an ORCA staff dashboard or customer login.
 
-## Environment variables
+Do not create real customers, connect customer devices, test live payment/SMS, or upload important files. Do not share screenshots containing secrets or account data.
 
-Set independently in staging and production. `.env.example` contains only fake local values.
+## Superuser for the preview
 
-| Name | Purpose / source | Secret? | Required now |
-|---|---|---:|---:|
-| `DJANGO_SETTINGS_MODULE` | Set to `config.settings.production`. | No | Yes |
-| `DJANGO_SECRET_KEY` | Generate a distinct random key in Render for each environment. | Yes | Yes |
-| `DEBUG` | `false`. | No | Yes |
-| `ALLOWED_HOSTS` | Exact Render host and approved custom hostname, comma-separated, no wildcard. | No | Yes |
-| `CSRF_TRUSTED_ORIGINS` | Exact HTTPS origins, including scheme and no path. | No | Yes |
-| `DATABASE_URL` | Supabase session-pooler URI copied from the correct project's Connect panel, with SSL required. | Yes | Yes |
-| `DATABASE_CONNECTION_MODE` | `session`; production settings reject any other value. | No | Yes |
-| `DB_CONN_MAX_AGE` | `60` seconds default. Account for every Gunicorn worker/thread when sizing DB connections. | No | Yes |
-| `DISABLE_SERVER_SIDE_CURSORS` | `false` for session pooler; production refuses `true`. | No | Yes |
-| `PAYMENTS_LIVE_ENABLED` | `false`; production rejects `true` until a separately approved payment phase. | No | Yes |
-| `SMS_BACKEND` | `console` only in Phase 1. Production refuses an unapproved provider. | No | Yes |
-| `PYTHON_VERSION` | `3.14.8`, revalidate against dependencies before upgrade. | No | Yes |
-| `LOG_LEVEL` | `INFO` or `WARNING`; do not log request bodies/URLs. | No | Optional |
+Only if the owner explicitly wants to inspect Django admin, create a preview-only administrator using the Render service Shell after the first successful migration:
 
-Never set superuser bootstrap passwords in Blueprint YAML. Create the first admin through an
-owner-approved one-off secure procedure only after MFA and account recovery policy exist; neither
-procedure nor bootstrap command is part of Phase 1.
+```sh
+python manage.py createsuperuser
+```
 
-## First deploy smoke checks (synthetic environment only)
+Enter a dedicated preview email and a unique password at the prompts. Do not set `DJANGO_SUPERUSER_PASSWORD` in YAML or paste the password into chat. The project has no environment-based superuser bootstrap and no implemented MFA enforcement yet. Therefore restrict access to the preview and do not use this as a production admin account.
 
-1. Confirm the deploy SHA, branch, root directory, Python version, dependency output, and Render
-   settings. Never share environment values.
-2. Confirm build passes `collectstatic`; confirm the pre-deploy phase applies migrations successfully.
-3. `GET /healthz` should return `204` with an empty body and no DB data.
-4. `GET /readyz` should return `204` when the configured database is reachable and `503` without
-   exception detail when it is unavailable.
-5. Confirm HTTPS redirect and secure cookies on a later authenticated endpoint. Do not test a
-   customer, payment, SMS, or device flow in Phase 1.
-6. Confirm JSON logs contain request ID, method, and status but no path, query, phone, token, or
-   payload. Use synthetic sentinel values.
+## Troubleshooting
 
-## Rollback, domains and TLS
+| Symptom | Check |
+|---|---|
+| Build says a Python package is missing | Confirm Root Directory is `orca_webserver` and build installs `requirements.txt`. |
+| Settings fail on missing secret/database/host | Set the required Render variables above. Do not set them in `.env.example` with real values. |
+| Error says demo backends are forbidden | This preview requires explicit owner-approved `ALLOW_DEMO_BACKENDS=true`; otherwise the production settings intentionally fail closed. Do not bypass this for a live service. |
+| `DATABASE_URL` rejected for SSL or pooler | Use the preview project's SSL-enabled session pooler, not transaction mode/port `6543`. Never share the URL. |
+| `400 Bad Request` / invalid host | Add the exact hostname to `ALLOWED_HOSTS`; add its HTTPS origin to `CSRF_TRUSTED_ORIGINS`. |
+| Static admin styling is missing | Review `collectstatic` output and WhiteNoise static settings; redeploy after correcting the build. |
+| `/healthz` fails | Check Gunicorn startup, assigned `$PORT`, and deployment logs. `/healthz` does not require database readiness. |
+| `/readyz` returns `503` | Check database availability, SSL, session-pooler URL and network access; do not paste credentials into logs/chat. |
 
-- Record the last known-good SHA before each owner-approved release. Use Render's rollback to that
-  deploy if the app fails health/readiness.
-- Database schema rollback is separate. Prefer forward-compatible migrations; do not roll back a
-  destructive migration without an approved recovery plan and verified backup.
-- Attach custom domains only after DNS ownership is verified. Confirm Render TLS certificate is
-  active and HTTPS redirect works before sharing links.
-- Exact Render/Supabase plans, prices, regions, backup retention, RPO/RTO, DNS, and TLS are
-  **UNVERIFIED**. Human owner must select and verify them.
+## Before calling this production-ready
+
+These are open gates, not features provided by deployment configuration:
+
+- Implement and test customer/staff APIs, authentication, authorization and enforced MFA.
+- Approve privacy, legal, data retention, support and incident response.
+- Implement real SMS/payment/storage/device adapters with separate security review. ClickPesa has no sandbox; automated tests must use the fake adapter. Never test with real transactions.
+- Configure durable object storage before relying on uploads. Current storage is local filesystem and Render service filesystems are not durable storage across deploys/restarts unless a persistent disk is deliberately configured. No Cloudinary adapter exists.
+- Configure and exercise database backups and restore; confirm retention, RPO and RTO.
+- Verify CSP enforcement, HTTPS/cookies, monitoring, rate limits and production domain ownership.
+- Complete PostgreSQL concurrency, Flutter, browser, device and end-to-end checks on synthetic data.
+
+See [`HUMAN_VERIFICATION.md`](HUMAN_VERIFICATION.md), [`SUPABASE_DATA_API_LOCKDOWN.md`](SUPABASE_DATA_API_LOCKDOWN.md), and [`LIVE_SMOKE_TEST.md`](LIVE_SMOKE_TEST.md). Keep production status **NOT READY** until owners close and record these gates.
