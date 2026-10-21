@@ -4,7 +4,7 @@
 
 ## First, know what you are deploying
 
-The current Django app is a backend foundation. Its registered routes include a small data-free welcome page at `/`, process health at `/healthz`, database readiness at `/readyz`, and Django admin at `/admin/`. It does **not** yet include customer/staff product APIs, an operational staff dashboard, customer sign-in, MFA enforcement, or real SMS, ClickPesa, Cloudinary/object-storage, or TV device connections. The HTML dashboard and Flutter/TV apps remain demos and do not connect to this server.
+The current Django app is a backend foundation. Its root route `/` serves the existing public landing page from `index.html`; process health is `/healthz`, database readiness is `/readyz`, and Django admin is `/admin/`. It does **not** yet include customer/staff product APIs, an operational staff dashboard, customer sign-in, MFA enforcement, or real SMS, ClickPesa, Cloudinary/object-storage, or TV device connections. The HTML dashboard and Flutter/TV apps remain demos and do not connect to this server.
 
 Use only synthetic preview data. Do not invite customers, accept payments, upload business-critical images, or treat Django admin as the finished ORCA product. Do not put Cloudinary, ClickPesa, or `DJANGO_SUPERUSER_*` values into Render: the current app does not use them.
 
@@ -29,7 +29,7 @@ Configured commands:
 | Pre-deploy | `python manage.py migrate --noinput` | Apply schema changes before the new instance receives traffic. |
 | Start | `gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --threads 4 --timeout 120` | Serve Django on Render’s assigned port. |
 | Health | `/healthz` | Return an empty `204` when the process responds. It does not prove the database is ready. |
-| Home | `/` | Return a small HTML welcome page showing the configured service mode and links to health/readiness checks. |
+| Home | `/` | Serve the existing public ORCA landing page from `index.html`. |
 
 Render documents that a pre-deploy command runs before release and a failing build/pre-deploy/start prevents the new deploy from replacing the current working deploy. Review migration changes and keep an owner-managed rollback plan. [Render deploy steps](https://render.com/docs/deploys) · [Blueprint reference](https://render.com/docs/blueprint-spec)
 
@@ -100,14 +100,14 @@ Expected responses:
 
 | Path | Method | Expected status | Body | Caller / purpose |
 |---|---|---:|---|---|
-| `/` | GET | `200` | Small HTML page: ORCA Cloud, configured `demo`/`live` mode, links to `/healthz` and `/readyz`. | Human visitor checking the service. |
-| `/` | HEAD | `200` | No body; same content type and metadata as GET. | HTTP probes or clients that only inspect headers. |
+| `/` | GET | `200` | Existing public ORCA landing page (`index.html`). | Public visitor. |
+| `/` | HEAD | `200` | No body; same content type and content length as GET. | HTTP probes or clients that only inspect headers. |
 | `/healthz` | GET | `204` | Empty. | Render process health check. Does not test the database. |
 | `/readyz` | GET | `200` when database connects; `503` otherwise | On 200, JSON `{"server_mode":"demo"}` or `{"server_mode":"live"}`. On 503, empty. | Owner/operator checking database readiness. |
 | `/admin/` | GET | `302` or `200` | Redirect to login or Django admin page. | Authorized owner inspecting Django admin. |
 | Unknown path | GET | `404` | Generic production not-found page without debug details. | Negative routing check. |
 
-Check that `/` contains no environment values, database details, internal hostnames, dependency versions, or personal data. Check `X-Request-ID` on application responses and use it to correlate app logs. The status check is not proof of customer journeys or integrations. `/tmp/orca-home.html` is a temporary local download; remove it after inspection if desired.
+Check that `/` renders the public landing page and `X-Request-ID` is present on application responses. The public marketing page is separate from authentication and product data. The Django superuser login is `/admin/`; the static `orca-dashboard-demo-1.html` is a visual demo, does not authenticate against Django, and contains generated sample data. Do not present that demo as a live staff dashboard.
 
 ## Superuser for the preview
 

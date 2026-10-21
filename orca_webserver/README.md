@@ -19,9 +19,12 @@ Assets include `logo.png`, `orca-logo-B.png`, `orca-logo-w.png`, `bc2.png`, and 
 
 `config/urls.py` currently registers:
 
+- `GET /` — serves the public landing page from `index.html`.
 - `GET /healthz` — empty process health response.
 - `GET /readyz` — checks database availability and returns server mode.
-- `/admin/` — Django admin site; this is not the planned staff operations dashboard.
+- `/admin/` — Django admin site; this is the only implemented Django superuser login, not the planned staff operations dashboard.
+
+`orca-dashboard-demo-1.html` is a separate browser-only visual demo with generated sample records. It has no Django login, does not use the database, and is not an operational staff dashboard. Do not use it to review live customer or device records.
 
 There are no customer, mobile, TV device, payment webhook, or staff product API routes. The Phase 2 domain models do not themselves expose data over HTTP. Browser HTML, Flutter and TV clients must never connect to the database directly.
 

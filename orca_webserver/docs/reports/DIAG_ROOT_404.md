@@ -160,3 +160,18 @@ The local production-settings TestClient reproduction above was performed before
 - The deployed branch/SHA is based on owner-provided deployment output and local branch references; Render's current deploy and dashboard overrides remain **UNVERIFIED**.
 - Live `/`, `/healthz`, `/readyz`, public 404 headers/body, actual database readiness, and Render's `X-Forwarded-For` trust-chain behavior remain **UNVERIFIED**.
 - No production database, live migration, browser suite, security audit, commit, push, merge, or deploy was performed.
+
+
+## Follow-up: serve the requested public landing page
+
+After the status-page fix was pushed, the owner clarified that `/` should display the repository's public `index.html`. The previous page (`ORCA Cloud` plus service-mode and health links) was the result of the earlier Option A approval, but it did not match this clarified expectation.
+
+The current local follow-up changes `config/views.py` to stream `index.html` at `/`, retains GET/HEAD support and request IDs, and updates the home-page regression test and deployment guide. The follow-up has not been committed or pushed yet. Render's deployed SHA is not verified; the owner reports seeing the status page, which is consistent with the earlier pushed commit but does not independently identify the running build.
+
+Authentication boundary confirmed from source:
+
+- `index.html` has navigation links with `href="#login"`, but no login section or form exists.
+- `orca-dashboard-demo-1.html` has no password/login form, Django request, or API call; it creates demo/sample data in browser JavaScript.
+- `/admin/` is the only implemented Django superuser login. After authentication, it opens Django admin, not the visual dashboard demo.
+
+No login flow or dashboard integration was added in this follow-up. A real authenticated staff dashboard requires a separate implementation and authorization scope; the static demo must not be mistaken for live data.

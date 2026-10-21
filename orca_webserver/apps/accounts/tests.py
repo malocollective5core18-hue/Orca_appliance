@@ -58,29 +58,22 @@ class HealthEndpointTests(TestCase):
 
 
 class RootPageTests(TestCase):
-    @override_settings(SERVER_MODE="demo", SECURE_HSTS_SECONDS=31536000)
-    def test_root_get_is_a_safe_html_welcome_page_with_request_id(self):
+    @override_settings(SECURE_HSTS_SECONDS=31536000)
+    def test_root_get_serves_existing_landing_page_with_request_id(self):
         with self.assertLogs("orca.request", level="INFO") as captured:
             response = self.client.get("/", secure=True)
 
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response["Content-Type"], "text/html; charset=utf-8")
-        body = response.content.decode()
-        self.assertIn("ORCA Cloud", body)
-        self.assertIn("demo", body)
-        self.assertIn('href="/healthz"', body)
-        self.assertIn('href="/readyz"', body)
-        for forbidden in (
-            "postgresql://",
-            "localhost",
-            "127.0.0.1",
-            "DJANGO_SECRET_KEY",
-            "Traceback",
-            "Django 5.",
-            "Python 3.",
-            "@example.test",
-        ):
-            self.assertNotIn(forbidden, body)
+        try:
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response["Content-Type"], "text/html; charset=utf-8")
+            body = b"".join(response.streaming_content).decode("utf-8")
+        finally:
+            response.close()
+
+        self.assertIn("<title>ORCA — Finance More.", body)
+        self.assertIn("For customers", body)
+        self.assertIn("For financial partners", body)
+        self.assertNotIn("Service mode:", body)
         self.assertEqual(response["X-Content-Type-Options"], "nosniff")
         self.assertEqual(response["X-Frame-Options"], "DENY")
         self.assertIn("max-age=31536000", response["Strict-Transport-Security"])
@@ -93,21 +86,20 @@ class RootPageTests(TestCase):
         formatted = SafeJsonFormatter().format(captured.records[0])
         self.assertIn(request_id, formatted)
 
-    @override_settings(SERVER_MODE="live")
-    def test_root_uses_configured_live_mode_without_extra_details(self):
-        response = self.client.get("/")
-        self.assertContains(response, "live")
-        self.assertNotContains(response, "demo")
+    def test_root_head_is_200_with_no_body_and_landing_page_length(self):
+        get_response = self.client.get("/")
+        expected_length = get_response["Content-Length"]
+        get_response.close()
 
-    def test_root_rejects_methods_other_than_get_and_head(self):
-        self.assertEqual(self.client.post("/").status_code, 405)
-
-    def test_root_head_is_200_html_without_a_body(self):
         response = self.client.head("/")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response["Content-Type"], "text/html; charset=utf-8")
         self.assertEqual(response.content, b"")
+        self.assertEqual(response["Content-Length"], expected_length)
         self.assertRegex(response["X-Request-ID"], r"^[0-9a-f]{32}$")
+
+    def test_root_rejects_methods_other_than_get_and_head(self):
+        self.assertEqual(self.client.post("/").status_code, 405)
 
     def test_unknown_route_still_returns_generic_404_with_request_id_in_log(self):
         with self.assertLogs("orca.request", level="INFO") as captured:
