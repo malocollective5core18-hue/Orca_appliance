@@ -1,0 +1,16 @@
+{% extends "accounts/base.html" %}
+{% block title %}Operations dashboard · ORCA{% endblock %}
+{% block body %}
+<main class="wide">
+  {% include "accounts/_dashboard_nav.html" %}
+  <section class="card operations-card">
+    <div class="toolbar operations-heading">
+      <div><h1 data-en="ORCA operations dashboard" data-sw="Dashibodi ya uendeshaji ya ORCA">ORCA operations dashboard</h1>
+      <p data-en="Preview of the Overview, Devices, Payments, Alerts, Partners, and Audit sections." data-sw="Onyesho la sehemu za Muhtasari, Vifaa, Malipo, Tahadhari, Washirika na Kumbukumbu ya ukaguzi.">Preview of the Overview, Devices, Payments, Alerts, Partners, and Audit sections.</p></div>
+      <span class="preview-badge" data-en="Sample data preview" data-sw="Onyesho la data za mfano">Sample data preview</span>
+    </div>
+    <iframe class="operations-frame" src="{% url 'accounts:operations_dashboard_demo' %}" title="ORCA operations dashboard preview" loading="eager"></iframe>
+  </section>
+</main>
+<style>.operations-card{padding:16px}.operations-heading{justify-content:space-between;margin:0 4px 14px}.operations-heading h1{margin-bottom:4px}.operations-heading p{margin:0}.preview-badge{display:inline-flex;align-items:center;border:1px solid rgba(215,25,33,.5);border-radius:999px;padding:7px 11px;color:#ff9a9e;font-size:.82rem;white-space:nowrap}.operations-frame{display:block;width:100%;height:min(82vh,1000px);min-height:680px;border:1px solid var(--orca-line);border-radius:12px;background:#0d0d0d}@media(max-width:700px){.operations-heading{align-items:flex-start}.operations-frame{height:78vh;min-height:620px}}</style>
+{% endblock %}

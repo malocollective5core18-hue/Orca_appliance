@@ -2,11 +2,13 @@
 
 from django.contrib.auth import login as auth_login, logout as auth_logout
 from django.contrib.auth.decorators import login_required
-from django.http import HttpResponseForbidden
+from django.conf import settings
+from django.http import FileResponse, HttpResponseForbidden
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
+from django.views.decorators.clickjacking import xframe_options_sameorigin
 
 from .forms import CustomerSignupForm, EmailLoginForm, StaffRegistrationForm
 from .models import UserRole
@@ -69,3 +71,19 @@ def register_staff(request):
         form.save()
         return render(request, "accounts/register_staff.html", {"form": StaffRegistrationForm(creator=request.user), "created": True})
     return render(request, "accounts/register_staff.html", {"form": form})
+
+
+@login_required
+def operations_dashboard(request):
+    if not request.user.is_staff and not request.user.is_superuser:
+        return HttpResponseForbidden("This dashboard is for ORCA staff accounts.")
+    return render(request, "accounts/operations_dashboard.html")
+
+
+@login_required
+@xframe_options_sameorigin
+def operations_dashboard_demo(request):
+    if not request.user.is_staff and not request.user.is_superuser:
+        return HttpResponseForbidden("This dashboard is for ORCA staff accounts.")
+    demo_file = settings.BASE_DIR / "orca-dashboard-demo-1.html"
+    return FileResponse(demo_file.open("rb"), content_type="text/html; charset=utf-8")

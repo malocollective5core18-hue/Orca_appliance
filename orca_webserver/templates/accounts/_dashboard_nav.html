@@ -1,0 +1,6 @@
+<nav class="dashboard-nav" aria-label="Dashboard navigation">
+  <a href="{% url 'accounts:dashboard' %}" {% if request.resolver_match.url_name == "dashboard" %}aria-current="page"{% endif %} data-en="Overview" data-sw="Muhtasari">Overview</a>
+  {% if request.user.is_staff or request.user.is_superuser %}<a href="{% url 'accounts:operations_dashboard' %}" {% if request.resolver_match.url_name == "operations_dashboard" %}aria-current="page"{% endif %} data-en="Operations" data-sw="Uendeshaji">Operations</a>{% endif %}
+  {% if request.user.is_superuser or request.user.role == "admin" %}<a href="{% url 'accounts:register_staff' %}" {% if request.resolver_match.url_name == "register_staff" %}aria-current="page"{% endif %} data-en="Users" data-sw="Watumiaji">Users</a>{% endif %}
+  {% if request.user.is_superuser %}<a href="/admin/" data-en="Django administration" data-sw="Usimamizi wa Django">Django administration</a>{% endif %}
+</nav>
