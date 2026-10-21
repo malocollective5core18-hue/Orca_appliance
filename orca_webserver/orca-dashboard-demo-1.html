@@ -222,7 +222,7 @@ function nav(){var r=cur(),n=$('nav'),oldMobile=document.querySelector('.mobile-
   addLink('#my-account','My account','overview');if(n.dataset.accountUsers)addLink('#account-users','Users','partners');if(n.dataset.djangoAdmin)addLink(n.dataset.djangoAdmin,'DN admin','devices');
   if(links.length){var summary=h('summary',{},h('span',{class:'nl'},'Account'),h('span',{class:'chevron','aria-hidden':'true'},'›'));var panel=h('div',{class:'account-links'},links);n.append(h('details',{class:'account-menu'},summary,panel));
     var mobileLinks=links.map(function(a){return a.cloneNode(true)});mobileLinks.push(h('a',{href:'#audit'},ic('audit'),h('span',{class:'nl'},'Audit log')));
-    var mobileSummary=h('summary',{},ic('audit'),h('span',{class:'nl'},'Audit logs'),h('span',{class:'chevron','aria-hidden':'true'},'›'));
+    var mobileSummary=h('summary',{},ic('overview'),h('span',{class:'nl'},'Account'),h('span',{class:'chevron','aria-hidden':'true'},'›'));
     n.parentNode.append(h('details',{class:'mobile-account-menu'},mobileSummary,h('div',{class:'mobile-account-links'},mobileLinks)));
   }
 }
