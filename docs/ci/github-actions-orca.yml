@@ -1,0 +1,203 @@
+# PROPOSED ONLY. GitHub does not execute a workflow from docs/ci/.
+# Review and pin all third-party actions to full commit SHAs before copying to .github/workflows/.
+name: ORCA draft CI
+
+on:
+  pull_request:
+    paths:
+      - "README.md"
+      - "SYSTEM-ARCHITECTURE.md"
+      - "docs/**"
+      - "orca_mobile/**"
+      - "orca_webserver/**"
+      - "orca_TVapp/**"
+      - ".github/workflows/orca.yml"
+  push:
+    branches: [main]
+    paths:
+      - "README.md"
+      - "SYSTEM-ARCHITECTURE.md"
+      - "docs/**"
+      - "orca_mobile/**"
+      - "orca_webserver/**"
+      - "orca_TVapp/**"
+      - ".github/workflows/orca.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      mobile: ${{ steps.filter.outputs.mobile }}
+      server: ${{ steps.filter.outputs.server }}
+      tv: ${{ steps.filter.outputs.tv }}
+      docs: ${{ steps.filter.outputs.docs }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            mobile:
+              - 'orca_mobile/**'
+            server:
+              - 'orca_webserver/**'
+            tv:
+              - 'orca_TVapp/**'
+            docs:
+              - 'README.md'
+              - 'SYSTEM-ARCHITECTURE.md'
+              - 'docs/**'
+              - '**/*.md'
+
+  django-sqlite:
+    needs: changes
+    if: needs.changes.outputs.server == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: orca_webserver
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+          cache: pip
+          cache-dependency-path: orca_webserver/requirements-dev.txt
+      - run: python -m pip install -r requirements-dev.txt
+      - run: python manage.py check --settings=config.settings.test
+        env:
+          DEBUG: "False"
+      - run: python manage.py makemigrations --check --dry-run --settings=config.settings.test
+        env:
+          DEBUG: "False"
+      - run: python manage.py test --settings=config.settings.test
+        env:
+          DEBUG: "False"
+      - run: pytest --cov
+        env:
+          DEBUG: "False"
+      - run: ruff check .
+      - run: ruff format --check .
+      - run: pip-audit -r requirements.txt
+
+  django-postgres:
+    needs: changes
+    if: needs.changes.outputs.server == 'true'
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: orca_test
+          POSTGRES_USER: orca_dev
+          POSTGRES_PASSWORD: orca_dev_only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U orca_dev -d orca_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    defaults:
+      run:
+        working-directory: orca_webserver
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+          cache: pip
+          cache-dependency-path: orca_webserver/requirements-dev.txt
+      - run: python -m pip install -r requirements-dev.txt
+      - run: python manage.py migrate --settings=config.settings.postgres_test
+        env:
+          DEBUG: "False"
+          DATABASE_URL: postgresql://orca_dev:orca_dev_only@127.0.0.1:5432/orca_test
+      - run: python manage.py test --settings=config.settings.postgres_test
+        env:
+          DEBUG: "False"
+          DATABASE_URL: postgresql://orca_dev:orca_dev_only@127.0.0.1:5432/orca_test
+      - run: pytest -m requires_postgres --cov
+        env:
+          DEBUG: "False"
+          DATABASE_URL: postgresql://orca_dev:orca_dev_only@127.0.0.1:5432/orca_test
+          DJANGO_SETTINGS_MODULE: config.settings.postgres_test
+
+  flutter-mobile:
+    needs: changes
+    if: needs.changes.outputs.mobile == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: orca_mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter --version
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test
+
+  tv-demo:
+    needs: changes
+    if: needs.changes.outputs.tv == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Check inline JavaScript syntax
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          import subprocess
+          import tempfile
+
+          pages = [
+              Path("orca_TVapp/orca-tv-demo-1.html"),
+              Path("orca_webserver/index.html"),
+              Path("orca_webserver/indexb.html"),
+              Path("orca_webserver/orca-dashboard-demo-1.html"),
+          ]
+          with tempfile.TemporaryDirectory() as tmp:
+              count = 0
+              for page in pages:
+                  source = page.read_text(encoding="utf-8")
+                  for match in re.finditer(r"<script(?![^>]*\bsrc=)[^>]*>(.*?)</script>", source, re.S | re.I):
+                      count += 1
+                      target = Path(tmp) / f"inline-{count}.js"
+                      target.write_text(match.group(1), encoding="utf-8")
+                      subprocess.run(["node", "--check", str(target)], check=True)
+              print(f"Checked {count} inline script blocks.")
+          PY
+
+  markdown:
+    needs: changes
+    if: needs.changes.outputs.docs == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: lycheeverse/lychee-action@v2
+        with:
+          args: --verbose --no-progress "./**/*.md"
+
+  secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

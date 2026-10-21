@@ -10,3 +10,15 @@ staticfiles/
 .pytest_cache/
 .coverage
 htmlcov/
+.ruff_cache/
+.mypy_cache/
+.tox/
+.idea/
+.vscode/
+.DS_Store
+coverage.xml
+dist/
+build/
+media/
+*.db
+*.sqlite

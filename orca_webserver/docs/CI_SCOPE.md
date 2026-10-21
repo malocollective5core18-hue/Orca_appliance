@@ -28,3 +28,8 @@ and TV jobs independent. Add CODEOWNERS entries from the repository root for eac
 
 **Status:** local script and nested human-copy drafts exist; actual GitHub Actions, protected branch
 checks, and enforced code ownership are **NOT IMPLEMENTED** due the approved scope boundary.
+
+
+## Current repository-level draft location
+
+Mission 03 adds non-active drafts under root docs/ci/. GitHub does not execute those files there. The owner must review and copy them to recognized root locations, pin actions, replace CODEOWNERS placeholders, and configure branch protection. No active workflow or CODEOWNERS is claimed.

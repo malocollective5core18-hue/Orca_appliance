@@ -1,0 +1,7 @@
+# PROPOSED ONLY. Replace placeholders with verified GitHub users/teams before copying to root CODEOWNERS.
+# GitHub does not read this nested draft.
+* @OWNER_TEAM
+/orca_mobile/ @MOBILE_TEAM
+/orca_webserver/ @BACKEND_TEAM
+/orca_TVapp/ @TV_TEAM
+/docs/ @OWNER_TEAM
