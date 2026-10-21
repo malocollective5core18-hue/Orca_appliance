@@ -28,6 +28,7 @@ class RequestIdMiddleware:
                     "event": "http.request.completed",
                     "method": request.method,
                     "status_code": response.status_code,
+                    "request_id": request_id,
                 },
             )
             return response

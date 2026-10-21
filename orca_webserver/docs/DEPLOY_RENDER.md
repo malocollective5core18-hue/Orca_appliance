@@ -4,7 +4,7 @@
 
 ## First, know what you are deploying
 
-The current Django app is a backend foundation. Its registered routes are `/healthz`, `/readyz`, and Django admin at `/admin/`. It does **not** yet include customer/staff product APIs, an operational staff dashboard, customer sign-in, MFA enforcement, or real SMS, ClickPesa, Cloudinary/object-storage, or TV device connections. The HTML dashboard and Flutter/TV apps remain demos and do not connect to this server.
+The current Django app is a backend foundation. Its registered routes include a small data-free welcome page at `/`, process health at `/healthz`, database readiness at `/readyz`, and Django admin at `/admin/`. It does **not** yet include customer/staff product APIs, an operational staff dashboard, customer sign-in, MFA enforcement, or real SMS, ClickPesa, Cloudinary/object-storage, or TV device connections. The HTML dashboard and Flutter/TV apps remain demos and do not connect to this server.
 
 Use only synthetic preview data. Do not invite customers, accept payments, upload business-critical images, or treat Django admin as the finished ORCA product. Do not put Cloudinary, ClickPesa, or `DJANGO_SUPERUSER_*` values into Render: the current app does not use them.
 
@@ -29,6 +29,7 @@ Configured commands:
 | Pre-deploy | `python manage.py migrate --noinput` | Apply schema changes before the new instance receives traffic. |
 | Start | `gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --threads 4 --timeout 120` | Serve Django on Render’s assigned port. |
 | Health | `/healthz` | Return an empty `204` when the process responds. It does not prove the database is ready. |
+| Home | `/` | Return a small HTML welcome page showing the configured service mode and links to health/readiness checks. |
 
 Render documents that a pre-deploy command runs before release and a failing build/pre-deploy/start prevents the new deploy from replacing the current working deploy. Review migration changes and keep an owner-managed rollback plan. [Render deploy steps](https://render.com/docs/deploys) · [Blueprint reference](https://render.com/docs/blueprint-spec)
 
@@ -82,22 +83,31 @@ Render environment variables are service settings and can trigger a new deploy w
 
 A successful build only means the configured build command completed. A successful deploy does not prove product journeys or integrations exist.
 
-## Step 5 — Safe smoke check
+## Step 5 — Verify the deployed service
 
-Replace `<service-host>` with the public hostname; do not include angle brackets in the command.
+Replace `<service-host>` with the public hostname; do not include angle brackets in commands. Run these checks after recording the deployed branch and commit SHA:
 
 ```sh
-curl -i https://<service-host>/healthz
-curl -i https://<service-host>/readyz
+curl -sS -D - -o /tmp/orca-home.html https://<service-host>/
+curl -sS -I https://<service-host>/
+curl -sS -D - -o /dev/null https://<service-host>/healthz
+curl -sS -D - https://<service-host>/readyz
+curl -sS -D - -o /dev/null https://<service-host>/admin/
+curl -sS -D - -o /dev/null https://<service-host>/not-a-real-route/
 ```
 
-Expected:
+Expected responses:
 
-- `/healthz`: `204 No Content`, empty body. This is Render’s configured process health check.
-- `/readyz`: `204 No Content` when the database connection works, or a generic `503` when it does not. It must not expose database exception details.
-- `https://<service-host>/admin/`: Django admin login page may load. This is framework administration, not an ORCA staff dashboard or customer login.
+| Path | Method | Expected status | Body | Caller / purpose |
+|---|---|---:|---|---|
+| `/` | GET | `200` | Small HTML page: ORCA Cloud, configured `demo`/`live` mode, links to `/healthz` and `/readyz`. | Human visitor checking the service. |
+| `/` | HEAD | `200` | No body; same content type and metadata as GET. | HTTP probes or clients that only inspect headers. |
+| `/healthz` | GET | `204` | Empty. | Render process health check. Does not test the database. |
+| `/readyz` | GET | `200` when database connects; `503` otherwise | On 200, JSON `{"server_mode":"demo"}` or `{"server_mode":"live"}`. On 503, empty. | Owner/operator checking database readiness. |
+| `/admin/` | GET | `302` or `200` | Redirect to login or Django admin page. | Authorized owner inspecting Django admin. |
+| Unknown path | GET | `404` | Generic production not-found page without debug details. | Negative routing check. |
 
-Do not create real customers, connect customer devices, test live payment/SMS, or upload important files. Do not share screenshots containing secrets or account data.
+Check that `/` contains no environment values, database details, internal hostnames, dependency versions, or personal data. Check `X-Request-ID` on application responses and use it to correlate app logs. The status check is not proof of customer journeys or integrations. `/tmp/orca-home.html` is a temporary local download; remove it after inspection if desired.
 
 ## Superuser for the preview
 

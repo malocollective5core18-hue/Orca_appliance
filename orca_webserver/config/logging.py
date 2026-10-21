@@ -21,12 +21,19 @@ class SafeJsonFormatter(logging.Formatter):
         if not isinstance(event, str) or event not in self.SAFE_EVENTS:
             event = "unstructured_log_suppressed"
 
+        request = getattr(record, "request", None)
+        request_id = getattr(record, "request_id", None) or getattr(
+            request, "request_id", None
+        ) or request_id_context.get()
+        if not isinstance(request_id, str) or len(request_id) > 64:
+            request_id = "-"
+
         payload = {
             "timestamp": datetime.now(UTC).isoformat(),
             "level": record.levelname,
             "logger": record.name,
             "event": event,
-            "request_id": request_id_context.get(),
+            "request_id": request_id,
         }
         status_code = getattr(record, "status_code", None)
         if isinstance(status_code, int) and 100 <= status_code <= 599:
