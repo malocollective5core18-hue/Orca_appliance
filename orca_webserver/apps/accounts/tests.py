@@ -199,3 +199,95 @@ class ConsoleSmsTests(SimpleTestCase):
     def test_console_backend_refuses_to_send_when_debug_is_off(self):
         with self.assertRaisesMessage(ImproperlyConfigured, "only when DEBUG=True"):
             ConsoleSMSBackend().send("+255700123456", "Test code 123456")
+
+
+class AccountJourneyTests(TestCase):
+    def test_public_signup_creates_customer_and_opens_customer_dashboard(self):
+        response = self.client.post(
+            reverse("accounts:signup"),
+            {
+                "full_name": "Amina Test",
+                "email": "amina@example.test",
+                "phone_number": "+255700000099",
+                "password": "A-unique-test-passphrase-778!",
+                "confirm_password": "A-unique-test-passphrase-778!",
+            },
+        )
+        user = User.objects.get(email="amina@example.test")
+        self.assertEqual(user.role, "customer")
+        self.assertFalse(user.is_staff)
+        self.assertRedirects(response, reverse("accounts:dashboard"))
+        self.assertContains(self.client.get(reverse("accounts:dashboard")), "Your customer account")
+
+    def test_admin_can_create_customer_service_but_not_admin(self):
+        admin_user = User.objects.create_user(
+            email="admin@example.test", password="Admin-test-password-882!", role="admin", is_staff=True
+        )
+        self.client.force_login(admin_user)
+        allowed = self.client.post(
+            reverse("accounts:register_staff"),
+            {
+                "full_name": "Service Agent",
+                "email": "service@example.test",
+                "phone_number": "+255700000091",
+                "role": "customer_service",
+                "password": "Service-test-password-882!",
+            },
+        )
+        self.assertEqual(allowed.status_code, 200)
+        service_user = User.objects.get(email="service@example.test")
+        self.assertEqual(service_user.role, "customer_service")
+        self.assertTrue(service_user.is_staff)
+
+        denied = self.client.post(
+            reverse("accounts:register_staff"),
+            {
+                "full_name": "Another Admin",
+                "email": "another-admin@example.test",
+                "phone_number": "+255700000092",
+                "role": "admin",
+                "password": "Admin-test-password-883!",
+            },
+        )
+        self.assertEqual(denied.status_code, 200)
+        self.assertFalse(User.objects.filter(email="another-admin@example.test").exists())
+
+    def test_customer_service_cannot_register_any_system_user(self):
+        service_user = User.objects.create_user(
+            email="service@example.test", password="Service-test-password-882!", role="customer_service", is_staff=True
+        )
+        self.client.force_login(service_user)
+        self.assertEqual(self.client.get(reverse("accounts:register_staff")).status_code, 403)
+        self.assertNotContains(self.client.get(reverse("accounts:dashboard")), "Register a system user")
+
+    def test_admin_cannot_open_django_admin_but_superuser_can(self):
+        admin_user = User.objects.create_user(
+            email="admin@example.test", password="Admin-test-password-882!", role="admin", is_staff=True
+        )
+        self.client.force_login(admin_user)
+        self.assertEqual(self.client.get("/admin/").status_code, 403)
+
+        root_user = User.objects.create_superuser(
+            email="root@example.test", password="Root-test-password-882!"
+        )
+        self.client.force_login(root_user)
+        self.assertEqual(self.client.get("/admin/").status_code, 200)
+
+    def test_customer_login_routes_to_dashboard_and_admin_dashboard_hides_admin_link(self):
+        customer = User.objects.create_user(
+            email="customer@example.test", phone_number="+255700000093", password="Customer-test-pass-882!", full_name="Test Customer"
+        )
+        response = self.client.post(
+            reverse("accounts:login"),
+            {"email": customer.email, "password": "Customer-test-pass-882!"},
+        )
+        self.assertRedirects(response, reverse("accounts:dashboard"))
+        self.assertContains(self.client.get(reverse("accounts:dashboard")), "Test Customer")
+
+        admin_user = User.objects.create_user(
+            email="admin@example.test", password="Admin-test-password-882!", role="admin", is_staff=True
+        )
+        self.client.force_login(admin_user)
+        dashboard_response = self.client.get(reverse("accounts:dashboard"))
+        self.assertContains(dashboard_response, "Register a system user")
+        self.assertNotContains(dashboard_response, "Django superuser administration")

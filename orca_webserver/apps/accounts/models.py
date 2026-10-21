@@ -11,6 +11,8 @@ class UserRole(models.TextChoices):
     SUPPORT = "support", "Support"
     FINANCE = "finance", "Finance"
     ADMIN = "admin", "Administrator"
+    CUSTOMER_SERVICE = "customer_service", "Customer service"
+    SUPERUSER = "superuser", "Superuser"
     PARTNER_VIEWER = "partner_viewer", "Partner viewer"
 
 
@@ -33,7 +35,7 @@ class UserManager(BaseUserManager):
         return user
 
     def create_superuser(self, email, password, **extra_fields):
-        extra_fields.setdefault("role", UserRole.ADMIN)
+        extra_fields.setdefault("role", UserRole.SUPERUSER)
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
         extra_fields.setdefault("is_active", True)
@@ -43,6 +45,7 @@ class UserManager(BaseUserManager):
 
 
 class User(AbstractBaseUser, PermissionsMixin):
+    full_name = models.CharField(max_length=160, blank=True)
     email = models.EmailField(max_length=254, unique=True, null=True, blank=True)
     phone_number = models.CharField(max_length=32, unique=True, null=True, blank=True)
     role = models.CharField(max_length=32, choices=UserRole.choices, default=UserRole.CUSTOMER)

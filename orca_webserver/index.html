@@ -159,6 +159,19 @@
       cursor: pointer;
     }
 
+    .language-select {
+      color: inherit;
+      background: transparent;
+      border: 0;
+      outline-offset: 3px;
+      font: inherit;
+      cursor: pointer;
+    }
+    .language-select option { color: #111; }
+    .language-picker { display: inline-flex; align-items: center; }
+    .sidebar-lang .language-select { width: 100%; text-align: center; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+
     .btn {
       display: inline-flex;
       align-items: center;
@@ -1563,9 +1576,9 @@ footer::before {
         <a href="#app">The app</a>
       </div>
       <div class="nav-actions">
-        <span class="lang">EN / SW</span>
-        <a class="btn btn-ghost" href="#login">Log in</a>
-        <a class="btn btn-primary" href="#apply">Apply for financing</a>
+        <label class="lang language-picker"><span class="sr-only">Choose language</span><select class="language-select" aria-label="Choose language"><option value="en">English</option><option value="sw">Kiswahili</option></select></label>
+        <a class="btn btn-ghost" href="/accounts/login/">Log in</a>
+        <a class="btn btn-primary" href="/accounts/signup/">Apply for financing</a>
         <button class="menu-toggle" id="menuToggle" aria-label="Open menu" aria-expanded="false">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M4 7h16M4 12h16M4 17h16" />
@@ -1605,14 +1618,14 @@ footer::before {
           <circle cx="17" cy="8" r="2.5" />
           <path d="M17 12.2c2.5.4 4 2.2 4 4.8" />
         </svg>For partners</a>
-      <a href="#apply"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+      <a href="/accounts/signup/"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
           <path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" />
         </svg>Apply for financing</a>
     </nav>
     <div class="sidebar-foot">
-      <a class="btn btn-primary" href="#apply">Apply for financing</a>
-      <a class="btn btn-ghost" href="#login">Log in</a>
-      <div class="sidebar-lang">English / Kiswahili</div>
+      <a class="btn btn-primary" href="/accounts/signup/">Apply for financing</a>
+      <a class="btn btn-ghost" href="/accounts/login/">Log in</a>
+      <label class="sidebar-lang language-picker"><span class="sr-only">Chagua lugha / Choose language</span><select class="language-select" aria-label="Chagua lugha / Choose language"><option value="en">English</option><option value="sw">Kiswahili</option></select></label>
     </div>
   </aside>
 
@@ -1628,7 +1641,7 @@ footer::before {
           <p class="lead">Own a Smart TV, fridge, or solar system through affordable installments — with real-time
             visibility for the institutions behind them, and full ownership the moment you finish paying.</p>
           <div class="hero-cta">
-            <a class="btn btn-primary" href="#apply">Explore financing</a>
+            <a class="btn btn-primary" href="/accounts/signup/">Explore financing</a>
             <a class="btn btn-ghost" href="#partners">For financial partners</a>
           </div>
           <span style="font-size:0.8rem;">English / Kiswahili</span>
@@ -1936,7 +1949,7 @@ footer::before {
         <h2>Ready to put ownership within reach?</h2>
         <p>Start a financing application, or talk to us about becoming a partner institution or retailer.</p>
         <div class="cta-row">
-          <a class="btn btn-primary" href="#apply">Apply for financing</a>
+          <a class="btn btn-primary" href="/accounts/signup/">Apply for financing</a>
           <a class="btn btn-ghost" href="#contact">Partner with us</a>
         </div>
       </div>
@@ -1987,6 +2000,93 @@ footer::before {
 </body>
 
 <script>
+  // Site-wide English/Kiswahili copy. The selection is shared across the
+  // desktop header and mobile sidebar and is remembered on this device.
+  const orcaCopySw = {
+    "How it works":"Jinsi inavyofanya kazi", "For customers":"Kwa wateja", "For partners":"Kwa washirika",
+    "Technology":"Teknolojia", "The app":"Programu", "Log in":"Ingia", "Apply for financing":"Omba ufadhili",
+    "Embedded appliance financing, built for Tanzania":"Ufadhili wa vifaa vya nyumbani uliounganishwa, kwa Tanzania",
+    "Finance more.":"Pata ufadhili zaidi.", "Connect":"Unganisha", "better.":"vizuri.", "Enable ownership.":"Wezesha umiliki.",
+    "Own a Smart TV, fridge, or solar system through affordable installments — with real-time visibility for the institutions behind them, and full ownership the moment you finish paying.":"Miliki runinga janja, friji au mfumo wa sola kwa kulipa kwa awamu nafuu. Taasisi husika hufuatilia malipo, na kifaa kinakuwa chako kikamilifu baada ya malipo ya mwisho.",
+    "Explore financing":"Angalia ufadhili", "For financial partners":"Kwa taasisi za kifedha", "English / Kiswahili":"Kiingereza / Kiswahili",
+    "appliances in pilot":"vifaa kwenye majaribio", "MFI partners":"washirika wa taasisi ndogo za fedha", "pilot market":"soko la majaribio",
+    "Payment confirmed":"Malipo yamethibitishwa", "Repayment record":"Historia ya marejesho", "Financed via CRDB Microfinance":"Imefadhiliwa na CRDB Microfinance",
+    "Active":"Inaendelea", "Ownership progress":"Maendeleo ya umiliki", "7 of 11 installments complete":"Awamu 7 kati ya 11 zimelipwa",
+    "Full ownership transfers automatically":"Umiliki kamili huhamishwa moja kwa moja", "Next payment":"Malipo yanayofuata", "Due":"Tarehe ya mwisho",
+    "One connected loop, four parties":"Mfumo mmoja unaounganisha pande nne", "Every ORCA appliance links the customer, the financing institution, the payment gateway, and the ORCA Cloud — so repayment, device health, and ownership status stay in sync in real time.":"Kila kifaa cha ORCA huunganisha mteja, taasisi ya ufadhili, njia ya malipo na ORCA Cloud ili taarifa za marejesho, hali ya kifaa na umiliki zilingane kwa wakati halisi.",
+    "Customer":"Mteja", "Applies, gets approved, activates the appliance":"Anaomba ufadhili, anaidhinishwa na kuwasha kifaa", "Financing institution":"Taasisi ya ufadhili",
+    "Underwrites, monitors repayment and risk":"Hutathmini ombi na kufuatilia marejesho pamoja na hatari", "Payment gateway":"Njia ya malipo",
+    "Mobile money, bank transfer, card":"Pesa kwa simu, uhamisho wa benki au kadi", "ORCA appliance":"Kifaa cha ORCA", "Reports status, receives control commands":"Hutuma hali ya kifaa na kupokea maagizo",
+    "What makes it work":"Jinsi mfumo unavyofanya kazi", "Financing, built into the hardware":"Ufadhili uliojengwa ndani ya kifaa",
+    "An embedded control board turns every financed appliance into a connected asset — visible, manageable, and fully transferable on the final payment.":"Bodi ya udhibiti huunganisha kila kifaa kilichofadhiliwa ili hali yake ionekane na isimamiwe. Umiliki huhamishwa baada ya malipo ya mwisho.",
+    "Affordable installments":"Awamu nafuu", "Repayment schedules sized to household budgets, with no hidden fees.":"Ratiba za marejesho zinazolingana na bajeti ya kaya, bila ada zilizofichwa.",
+    "Real-time visibility":"Ufuatiliaji wa wakati halisi", "Institutions see repayment status and device health as it happens.":"Taasisi huona hali ya marejesho na kifaa kwa wakati halisi.",
+    "Smart IoT control":"Udhibiti mahiri wa IoT", "Compliant, contract-based remote management if payments lapse.":"Udhibiti wa mbali unaofuata mkataba endapo malipo yatachelewa.",
+    "Seamless payments":"Malipo rahisi", "Pay by mobile money, bank transfer, or card — right from the app.":"Lipa kwa pesa za simu, uhamisho wa benki au kadi kupitia programu.",
+    "Built for every side of the transaction":"Imeundwa kwa kila upande wa muamala", "Whoever you are, ORCA fits your role":"ORCA inakidhi mahitaji ya kila jukumu",
+    "For financing institutions":"Kwa taasisi za kifedha", "For merchants":"Kwa wauzaji", "Own it, one payment at a time":"Miliki kwa kulipa hatua kwa hatua",
+    "Apply in minutes, get a clear repayment schedule, and pay however suits you. Track your ownership progress the whole way.":"Omba kwa dakika chache, pata ratiba wazi ya marejesho na ulipe kwa njia inayokufaa. Fuatilia maendeleo ya umiliki wako.",
+    "Transparent terms, no hidden fees":"Masharti wazi, bila ada zilizofichwa", "Pay by mobile money in seconds":"Lipa kwa pesa ya simu kwa sekunde", "Full ownership on final payment":"Umiliki kamili baada ya malipo ya mwisho",
+    "Application to activation":"Kuanzia ombi hadi kuwasha kifaa", "Same day":"Siku hiyo hiyo", "Language support":"Lugha zinazopatikana", "English · Kiswahili":"Kiingereza · Kiswahili",
+    "Lend with the asset in view":"Toa ufadhili huku ukifuatilia kifaa", "Monitor portfolio health and device status in one dashboard, with contract-compliant recovery tools when payments lapse.":"Fuatilia hali ya mikopo na vifaa kwenye dashibodi moja, pamoja na zana za ufuatiliaji zinazofuata mkataba malipo yanapochelewa.",
+    "Real-time device and repayment data":"Taarifa za kifaa na marejesho kwa wakati halisi", "Lower risk, better recovery rates":"Hatari ndogo na marejesho bora", "API access for your own systems":"Ufikiaji wa API kwa mifumo yako",
+    "Portfolio visibility":"Muonekano wa mikopo", "Real-time":"Wakati halisi", "Integration":"Muunganisho", "REST API + dashboard":"REST API na dashibodi",
+    "Sell more, with financing built in":"Uza zaidi kwa ufadhili uliojumuishwa", "Offer ORCA financing at checkout, track activation status, and see your commissions in one place.":"Toa ufadhili wa ORCA wakati wa mauzo, fuatilia kuwashwa kwa kifaa na uone kamisheni zako sehemu moja.",
+    "Higher conversion at point of sale":"Mauzo mengi zaidi", "Streamlined order fulfillment":"Utekelezaji rahisi wa oda", "Clear settlement reporting":"Taarifa wazi za malipo",
+    "Setup":"Mipangilio", "No hardware needed":"Hakuna kifaa cha ziada kinachohitajika", "Settlement":"Malipo", "Tracked per order":"Hufuatiliwa kwa kila oda",
+    "The ORCA app, in your pocket":"Programu ya ORCA, karibu nawe", "Customers see what they owe, pay an installment and follow ownership of their appliance in a calm black interface that matches this site.":"Wateja huona kiasi wanachodaiwa, hulipa awamu na kufuatilia umiliki wa kifaa kupitia programu ya ORCA.",
+    "Amount due this month and ownership progress at a glance":"Ona malipo ya mwezi huu na maendeleo ya umiliki kwa urahisi", "Pay an installment toward the appliance, with a review step before confirming":"Lipa awamu ya kifaa baada ya kukagua maelezo", "Clear Active or Restricted device status, decided by ORCA Cloud":"Ona kama kifaa kinaendelea au kimezuiwa na ORCA Cloud",
+    "Open the app demo":"Fungua mfano wa programu", "Demo preview with sample data. No real payments are made.":"Mfano unaotumia data ya majaribio. Hakuna malipo halisi yanayofanyika.",
+    "Ready to put ownership within reach?":"Uko tayari kuwezesha umiliki?", "Start a financing application, or talk to us about becoming a partner institution or retailer.":"Anza ombi la ufadhili au wasiliana nasi kuhusu kuwa taasisi mshirika au muuzaji.", "Partner with us":"Shirikiana nasi",
+    "Embedded appliance financing infrastructure for Tanzania, built by Black Science Technologies Ltd.":"Miundombinu ya ufadhili wa vifaa kwa Tanzania, iliyoundwa na Black Science Technologies Ltd.",
+    "Product":"Bidhaa", "Company":"Kampuni", "About BST":"Kuhusu BST", "Pilot program":"Programu ya majaribio", "Contact":"Mawasiliano",
+    "Legal":"Sheria", "Privacy":"Faragha", "Terms":"Masharti", "Financing disclosures":"Taarifa za ufadhili",
+    "How it works":"Jinsi inavyofanya kazi", "© 2026 Black Science Technologies Ltd — Dar es Salaam, Tanzania":"© 2026 Black Science Technologies Ltd — Dar es Salaam, Tanzania",
+    "Connect better.":"Unganisha vizuri.", "For customers":"Kwa wateja", "For partners":"Kwa washirika", "The app":"Programu",
+    "MFI partners":"washirika wa taasisi ndogo za fedha", "98% on-time":"98% ya malipo kwa wakati", "Repayment record":"Historia ya marejesho",
+    "Smart TV — 43\" LED":"Runinga janja — LED ya inchi 43", "Financed via CRDB Microfinance":"Imefadhiliwa kupitia CRDB Microfinance",
+    "Due":"Tarehe ya mwisho", "Oct 3, 2026":"3 Oktoba 2026", "Whoever you are, ORCA fits your role":"ORCA inakidhi mahitaji ya kila jukumu",
+    "For merchants":"Kwa wauzaji", "Same day":"Siku hiyo hiyo", "Language support":"Lugha zinazopatikana", "English · Kiswahili":"Kiingereza · Kiswahili",
+    "Lower risk, better recovery rates":"Hatari ndogo na marejesho bora", "API access for your own systems":"Ufikiaji wa API kwa mifumo yako",
+    "Real-time":"Wakati halisi", "Integration":"Muunganisho", "REST API + dashboard":"REST API na dashibodi",
+    "Streamlined order fulfillment":"Utekelezaji rahisi wa oda", "Clear settlement reporting":"Taarifa wazi za malipo", "No hardware needed":"Hakuna kifaa cha ziada kinachohitajika",
+    "Settlement":"Malipo", "Tracked per order":"Hufuatiliwa kwa kila oda",
+    "Customers see what they owe, pay an installment and follow ownership of their appliance in a calm black interface that matches this site.":"Wateja huona kiasi wanachodaiwa, hulipa awamu na kufuatilia umiliki wa kifaa kupitia programu ya ORCA.",
+    "Pay an installment toward the appliance, with a review step before confirming":"Lipa awamu ya kifaa baada ya kukagua maelezo", "Clear Active or Restricted device status, decided by ORCA Cloud":"Ona kama kifaa kinaendelea au kimezuiwa na ORCA Cloud",
+    "Demo preview with sample data. No real payments are made.":"Mfano unaotumia data ya majaribio. Hakuna malipo halisi yanayofanyika.",
+    "Start a financing application, or talk to us about becoming a partner institution or retailer.":"Anza ombi la ufadhili au wasiliana nasi kuhusu kuwa taasisi mshirika au muuzaji.",
+    "Partner with us":"Shirikiana nasi", "Company":"Kampuni", "About BST":"Kuhusu BST", "Pilot program":"Programu ya majaribio", "Contact":"Mawasiliano",
+    "Privacy":"Faragha", "Terms":"Masharti", "Financing disclosures":"Taarifa za ufadhili"
+  };
+  const languageSelects = document.querySelectorAll('.language-select');
+  const originalTextNodes = new WeakMap();
+  const textWalker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
+    acceptNode(node) {
+      if (!node.nodeValue.trim() || node.parentElement.closest('script,style,option')) return NodeFilter.FILTER_REJECT;
+      return NodeFilter.FILTER_ACCEPT;
+    }
+  });
+  const translatableNodes = [];
+  while (textWalker.nextNode()) translatableNodes.push(textWalker.currentNode);
+  translatableNodes.forEach(node => originalTextNodes.set(node, node.nodeValue));
+
+  function setOrcaLanguage(language) {
+    const selected = language === 'sw' ? 'sw' : 'en';
+    document.documentElement.lang = selected;
+    translatableNodes.forEach(node => {
+      const source = originalTextNodes.get(node);
+      const key = source.trim().replace(/\s+/g, ' ');
+      const translation = selected === 'sw' ? orcaCopySw[key] : null;
+      node.nodeValue = translation ? source.replace(source.trim(), translation) : source;
+    });
+    languageSelects.forEach(select => { select.value = selected; });
+    try { localStorage.setItem('orca-language', selected); } catch (_) { /* Storage can be disabled. */ }
+  }
+  languageSelects.forEach(select => select.addEventListener('change', () => setOrcaLanguage(select.value)));
+  let savedLanguage = 'en';
+  try { savedLanguage = localStorage.getItem('orca-language') || 'en'; } catch (_) { /* Use English by default. */ }
+  setOrcaLanguage(savedLanguage);
+
   document.querySelectorAll('.tab').forEach(tab => {
     tab.addEventListener('click', () => {
       document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));

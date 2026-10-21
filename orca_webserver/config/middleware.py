@@ -34,3 +34,19 @@ class RequestIdMiddleware:
             return response
         finally:
             request_id_context.reset(token)
+
+
+class SuperuserAdminOnlyMiddleware:
+    """Keep Django's powerful administration interface exclusive to superusers."""
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        if request.path.startswith("/admin/"):
+            user = getattr(request, "user", None)
+            if user is not None and user.is_authenticated and not user.is_superuser:
+                from django.http import HttpResponseForbidden
+
+                return HttpResponseForbidden("Django administration is restricted to superusers.")
+        return self.get_response(request)

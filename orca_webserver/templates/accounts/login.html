@@ -1,0 +1,7 @@
+{% extends "accounts/base.html" %}{% block title %}Log in · ORCA{% endblock %}{% block body %}
+<main><section class="card"><h1 data-en="Welcome back" data-sw="Karibu tena">Welcome back</h1><p data-en="Sign in to your ORCA account." data-sw="Ingia kwenye akaunti yako ya ORCA.">Sign in to your ORCA account.</p>
+<form method="post">{% csrf_token %}<input type="hidden" name="next" value="{{ next }}">{% if form.non_field_errors %}<ul class="form-errors">{{ form.non_field_errors }}</ul>{% endif %}
+<label for="id_email" data-en="Email" data-sw="Barua pepe">Email</label>{{ form.email }}{{ form.email.errors }}
+<label for="id_password" data-en="Password" data-sw="Nenosiri">Password</label>{{ form.password }}{{ form.password.errors }}
+<button class="submit" type="submit" data-en="Log in" data-sw="Ingia">Log in</button></form>
+<div class="links"><a class="button secondary" href="{% url 'accounts:signup' %}" data-en="Create a customer account" data-sw="Fungua akaunti ya mteja">Create a customer account</a></div></section></main>{% endblock %}

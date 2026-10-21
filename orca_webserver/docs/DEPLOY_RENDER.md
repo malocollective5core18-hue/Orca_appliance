@@ -4,7 +4,7 @@
 
 ## First, know what you are deploying
 
-The current Django app is a backend foundation. Its root route `/` serves the existing public landing page from `index.html`; process health is `/healthz`, database readiness is `/readyz`, and Django admin is `/admin/`. It does **not** yet include customer/staff product APIs, an operational staff dashboard, customer sign-in, MFA enforcement, or real SMS, ClickPesa, Cloudinary/object-storage, or TV device connections. The HTML dashboard and Flutter/TV apps remain demos and do not connect to this server.
+The current Django app serves the public landing page at `/`, provides bilingual customer signup/login and role-routed account screens under `/accounts/`, process health at `/healthz`, database readiness at `/readyz`, and superuser-only Django admin at `/admin/`. It still does **not** include customer-finance/device product APIs, an operational staff dashboard, MFA enforcement, or real SMS, ClickPesa, Cloudinary/object-storage, or TV device connections. The HTML dashboard and Flutter/TV apps remain demos and do not connect to this server.
 
 Use only synthetic preview data. Do not invite customers, accept payments, upload business-critical images, or treat Django admin as the finished ORCA product. Do not put Cloudinary, ClickPesa, or `DJANGO_SUPERUSER_*` values into Render: the current app does not use them.
 
@@ -107,7 +107,11 @@ Expected responses:
 | `/admin/` | GET | `302` or `200` | Redirect to login or Django admin page. | Authorized owner inspecting Django admin. |
 | Unknown path | GET | `404` | Generic production not-found page without debug details. | Negative routing check. |
 
-Check that `/` renders the public landing page and `X-Request-ID` is present on application responses. The public marketing page is separate from authentication and product data. The Django superuser login is `/admin/`; the static `orca-dashboard-demo-1.html` is a visual demo, does not authenticate against Django, and contains generated sample data. Do not present that demo as a live staff dashboard.
+Check that `/` renders the public landing page and `X-Request-ID` is present on application responses. `/accounts/signup/` creates customer accounts and redirects to the responsive customer account screen. `/accounts/login/` routes users to the customer or staff screen. Superusers may register any supported role; administrators may register customer-service accounts only; customer-service users cannot register accounts. Only superusers can open `/admin/`. The static `orca-dashboard-demo-1.html` remains an unauthenticated visual demo with generated sample data; do not present it as a live staff dashboard.
+
+## Account access in the preview
+
+Customer signup is available at `/accounts/signup/`. Administrator and customer-service accounts must be created by an authorized superuser/administrator using the staff dashboard; public signup cannot choose a staff role. Use synthetic identities only. The current login has no email verification, recovery flow, invitation delivery, or MFA, so keep the preview private.
 
 ## Superuser for the preview
 
@@ -136,7 +140,7 @@ Enter a dedicated preview email and a unique password at the prompts. Do not set
 
 These are open gates, not features provided by deployment configuration:
 
-- Implement and test customer/staff APIs, authentication, authorization and enforced MFA.
+- Implement and test customer finance/device APIs and enforced MFA. The current account login is an initial session-based flow; it does not include email verification, password recovery, MFA, or staff onboarding audit events.
 - Approve privacy, legal, data retention, support and incident response.
 - Implement real SMS/payment/storage/device adapters with separate security review. ClickPesa has no sandbox; automated tests must use the fake adapter. Never test with real transactions.
 - Configure durable object storage before relying on uploads. Current storage is local filesystem and Render service filesystems are not durable storage across deploys/restarts unless a persistent disk is deliberately configured. No Cloudinary adapter exists.

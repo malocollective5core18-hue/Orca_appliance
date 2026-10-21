@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}ORCA account{% endblock %}</title>
+  <style>
+    :root{color-scheme:dark;font-family:Inter,system-ui,sans-serif;background:#101314;color:#f4f5f2}
+    *{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(900px 480px at 80% -10%,#263333,transparent 65%),#101314}
+    header{height:64px;display:flex;align-items:center;justify-content:space-between;padding:0 max(20px,calc((100vw - 1100px)/2));border-bottom:1px solid #ffffff20}
+    header a{color:inherit;text-decoration:none;font-weight:800;letter-spacing:.08em}.lang{background:#202627;color:#f4f5f2;border:1px solid #ffffff30;border-radius:9px;padding:8px}
+    main{width:min(100% - 32px,560px);margin:clamp(24px,7vh,72px) auto}.wide{width:min(100% - 32px,900px)}
+    .card{background:#191e1f;border:1px solid #ffffff20;border-radius:18px;padding:clamp(20px,5vw,34px);box-shadow:0 24px 80px #0005}
+    h1{margin:0 0 8px;font-size:clamp(1.45rem,4vw,2rem)}p{color:#bdc7c5;line-height:1.55}label{display:block;margin:16px 0 6px;color:#d8dfdc;font-size:.93rem}
+    input,select{width:100%;min-height:46px;padding:10px 12px;border:1px solid #ffffff35;border-radius:9px;background:#101415;color:#f4f5f2;font:inherit}
+    button,.button{display:inline-flex;justify-content:center;align-items:center;min-height:44px;border:0;border-radius:9px;padding:11px 16px;background:#d4fb69;color:#142018;font-weight:750;text-decoration:none;cursor:pointer;font:inherit}
+    .submit{width:100%;margin-top:20px}.secondary{background:#252d2d;color:#eff4ef;border:1px solid #ffffff24}.row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    .errorlist,.form-errors{color:#ffb4a9;padding-left:20px}.links{display:flex;gap:12px;flex-wrap:wrap;margin-top:20px}.muted{font-size:.9rem;color:#aeb8b5}.toolbar{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.tile{padding:18px;background:#222929;border:1px solid #ffffff1c;border-radius:12px;margin-top:14px}.profile-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}.profile-grid .tile{margin:0;overflow-wrap:anywhere}.success{color:#c8f48e}
+    @media(max-width:560px){header{height:58px;padding:0 16px}.row{grid-template-columns:1fr}main{margin:24px auto}.links>*{width:100%}}
+  </style>
+</head>
+<body>
+<header><a href="/">ORCA</a><label class="muted" style="margin:0"><span data-en="Language" data-sw="Lugha">Language</span> <select class="lang language-select" aria-label="Language"><option value="en">English</option><option value="sw">Kiswahili</option></select></label></header>
+{% block body %}{% endblock %}
+<script src="/static/js/language.js" defer></script>
+</body>
+</html>
