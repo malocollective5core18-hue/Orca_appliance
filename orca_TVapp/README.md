@@ -11,8 +11,26 @@ See the root [system architecture](../SYSTEM-ARCHITECTURE.md) for how TV, mobile
 - The local state object and demo controls simulate Wi-Fi, activation, payment, restriction, and reset behavior.
 - No network API, WebSocket, EventSource, local persistence, device identity, hardware SDK, or remote-control integration is present. The displayed activation code and device/account/payment details are sample demo state.
 - Google Fonts is loaded externally; logo/media references and network behavior should be checked before using this in an offline or production TV environment.
+- The simulator has no package manifest, build tool, automated test folder, or installable TV package in this repository. Browser runtime behavior was not exercised in this Mission 02 environment.
 
 Do not install this HTML simulator as production TV firmware. Its controls deliberately allow local state changes and do not enforce ORCA account, finance, customer-consent, or device-security rules.
+
+## Run the simulator locally
+
+With Python 3 installed, serve this folder:
+
+```sh
+cd orca_TVapp
+python3 -m http.server 8001
+```
+
+Open `http://127.0.0.1:8001/orca-tv-demo-1.html` in a desktop browser. You can also open the HTML file directly. The web server command serves a file only; it does not connect to Django or simulate a physical television runtime. Google Fonts requires internet access; the simulator should be reviewed with network access disabled before any offline demonstration.
+
+## Simulator controls and state
+
+The page's `fresh()` state is held in JavaScript memory. The on-screen developer controls simulate power, Wi-Fi, activation, payment, overdue/restriction, and reset. Page buttons include help/connection dialogs and a new six-digit demo code. Arrow keys move focus among available buttons; Escape/Backspace closes a dialog. The simulated offline payment queue is applied by the local state machine when the connection is toggled back on. A page reload resets the simulation; no app data persistence or server/API request is implemented.
+
+The visible labels such as “ORCA Cloud reachable”, “device identity verified”, customer `Amina`, and device ID `ORCA-TV-0042` are sample strings, not network observations or provisioned identity. Never use real customer data or real activation codes in this simulator.
 
 ## Intended production TV responsibilities
 

@@ -1,6 +1,8 @@
 # ORCA Mobile API Contract Proposal
 
-**Status:** Draft for Django/backend and product review. This is a proposed contract, not an existing or approved ORCA API. Confirm the authentication method, payment providers, financing rules, and deployment details before implementing production behavior.
+**Status:** **PROPOSAL ONLY — not approved and not implemented.** The current Django project has no matching product API routes or OpenAPI document. This draft is for backend/product/finance/security review only. The existence of Django domain models does not make any endpoint below operational.
+
+**Example data:** All JSON bodies, names, IDs, dates, amounts, and codes below are synthetic illustrations, not real responses or customer records.
 
 **Purpose:** Give the ORCA Flutter app reliable, customer-scoped access to the information needed for Home, Pay, Device, History, and Link TV. ORCA Cloud remains authoritative for customer identity, account balances, payment status, appliance status, and TV-link outcomes. The app displays server values and submits customer intent; it must not infer financial or device-control decisions.
 
@@ -21,6 +23,9 @@
 - Authenticated resources are always scoped to the authenticated customer. Ignore/reject customer IDs supplied by the client for authorization decisions. Return `404` for inaccessible resource IDs where revealing existence would leak another customer's data.
 - Use explicit enums and nullable fields. Do not encode status in free-form message text.
 - Proposed list pagination uses opaque cursor tokens: `?limit=20&cursor=...`. Return a stable order and `next_cursor`; do not require the app to download a customer's entire history.
+- Paths in the endpoint table are complete paths. Any shorter path repeated in a subsection is a suffix relative to `/api/v1`; use the exact table path when implementing or reviewing a request. All JSON bodies shown in this document are illustrative examples, not captured server responses.
+- Customer auth is shown as bearer-token auth only to make the proposal concrete. Token issuer, lifetime, refresh, revocation, secure storage, sign-out, recovery and multi-device session behavior are **OPEN**. Do not implement a token lifecycle from this example.
+- Use the error envelope in §8 for all proposed endpoints. `request_id` must be generated/validated by the server and must not contain PII. Staff and device authentication are separate contracts and are not specified by this customer API proposal.
 
 ## 3. Proposed endpoints
 
@@ -275,3 +280,10 @@ Before production integration, ORCA owners should approve:
 - [ ] TV-link code issuer, expiry, rate limits, and terminal status meanings.
 - [ ] Data retention, privacy obligations, support tracing, rate limits, availability target, and peak-load assumptions.
 - [ ] User-facing wording and English/Swahili localization requirements.
+- [ ] Named API/schema owner; OpenAPI version/release policy; token/session issue, refresh, revocation and recovery lifecycle.
+- [ ] Customer/account/appliance cardinality and privacy-reviewed object authorization rules.
+- [ ] Shared contract tests and compatibility policy for mobile, Django and any device-facing protocol.
+
+## Implementation status check (21 October 2026)
+
+The inspected Django `config/urls.py` contains `/healthz`, `/readyz`, and `/admin/` only. There are no `/api/v1/` routes, serializers or generated OpenAPI file in this repository. This proposal must remain unimplemented until its open decisions are approved. The domain database foundation in `orca_webserver/apps/domain/` is not an API and does not establish customer or staff authorization.

@@ -1,22 +1,32 @@
 # ORCA appliance family — system architecture
 
-**Status:** Architecture guide for the repository as checked in on `main` (`28235bd`, 20 October 2026). This document distinguishes observed code from the intended production design. It does not claim that production services, infrastructure, or integrations already exist.
+**Status:** Current-state and target architecture, reviewed on 21 October 2026 on `codex/orca-cloud-foundation` at `3f5e4b8`. This document distinguishes observed code from the intended production design. It does not claim that production services, infrastructure, or integrations already exist.
 
 ## 1. Purpose and repository layout
 
-This repository groups three ORCA projects so mobile, web/backend, and TV contributors can work in separate folders while sharing one product and integration contract.
+This repository groups three ORCA projects so mobile, web/backend, and TV contributors can work in separate folders. A shared approved integration contract is a target; the current mobile API document is still a proposal.
 
 ```text
-orca_mobile/   Flutter customer app (currently a local demo)
-orca_webserver/ public website and control dashboard prototypes (currently static HTML)
-orca_TVapp/    TV screen interaction prototype (currently a browser-based simulator)
+orca_mobile/   Flutter customer app demo; separate unselected duplicate Dart entrypoint exists
+orca_webserver/ marketing pages + browser dashboard demo + Django Phase 1/2 foundation
+orca_TVapp/    single browser-based TV simulator
 ```
 
 The intended production family has one authoritative central service, ORCA Cloud, that coordinates customer accounts, appliances, finance records, payment-provider results, activation, and device status. The mobile and TV clients communicate with that service. They must not treat one another as authorities or connect directly to each other for account or payment decisions.
 
-**Current-state warning:** No Django/API service, database schema, payment adapter, device broker, deployment configuration, or production credentials were found in this repository snapshot. The central backend architecture below is the target design, not a verified implementation. Production hostnames, backend language/framework, provider, device protocol, and account model are **UNVERIFIED**.
+**Current-state warning:** A Django project, custom user, domain schema, local/fake adapters, migrations, state-transition helpers, health/readiness routes, and a Render Blueprint draft are now present under `orca_webserver/`. The server has no customer/staff product API, implemented authentication flow, live provider integration, or production deployment proof. Production hostnames, actual Render/Supabase services, hardware/device protocol, and approved account/finance semantics remain **UNVERIFIED**. The current branch is not production-ready.
 
 ## 2. Component responsibilities
+
+### Verified component inventory (21 October 2026)
+
+| Component | Current implementation | Entry point | Data source | External integrations | Tests and observed result | Production status | Next dependency |
+|---|---|---|---|---|---|---|---|
+| ORCA Mobile (`orca_mobile/`) | Flutter UI with Home, Pay, Device, History, Link TV and intro; actions and account/device values are demo. | Default `flutter run` entrypoint `lib/main.dart`; a different `orca_mobile/main.dart` is unselected. | In-memory `AppState` sample values and transaction list; no API or durable app storage observed. | Flutter `video_player` plugin for the intro asset. No payment/API provider package configured. | `test/widget_test.dart` has two widget tests. Flutter SDK was unavailable in Mission 02; result **UNVERIFIED**. | **PROTOTYPE / DEMO** | Install compatible Flutter SDK, run tests, approve identity and API contract, implement isolated typed repository. |
+| ORCA Web/Cloud (`orca_webserver/`) | Two marketing pages, browser-only staff dashboard demo, Django custom user/domain schema/transitions/local adapters and health checks. | Static pages `index.html`, `indexb.html`, `orca-dashboard-demo-1.html`; Django `manage.py` / `config.wsgi:application`. | Marketing HTML is static. Dashboard generates sample data and stores only theme in `localStorage`. Django ORM selects configured DB; test settings use SQLite, production URL configuration is not evidence of live data. | Google Fonts from HTML; local/fake adapters in Django. No live payment/SMS/storage/device provider connection observed. | `apps/accounts/tests.py`, `apps/domain/tests.py`. Earlier Phase 2 report: 40 passed, 4 PostgreSQL-only skips in a temporary Pillow-enabled environment. Mission 02 rerun failed during test import because shared venv lacked Pillow; see `docs/testing.md`. | **IMPLEMENTED FOUNDATION**; demos are separate; not production-ready. | Install declared dependencies reproducibly, run PostgreSQL tests, close security/product decisions, approve and implement APIs/auth, prove hosting/backups. |
+| ORCA TV (`orca_TVapp/`) | Single-screen-sized HTML/JS simulator for boot, network, activation, linked, payment, home/restricted and reset states. | `orca-tv-demo-1.html`. | In-memory JavaScript state reset on page reload. | Google Fonts in the browser. No hardware/network service observed. | No test folder or automated test command found. Browser run not performed; **UNVERIFIED**. | **PROTOTYPE / DEMO** | Select target TV hardware/runtime, secure device provisioning and protocol; create device/browser test plan. |
+
+The inventory describes this branch at its recorded review point. A file's presence or a configuration value does not prove that the corresponding build, service, account, or integration is operational.
 
 ### ORCA Mobile — `orca_mobile/`
 
@@ -26,7 +36,7 @@ The intended production family has one authoritative central service, ORCA Cloud
 - Keep demo data visibly separate from live data. A network failure must never silently switch a real customer into demo data.
 - Own presentation, accessibility, localization, input assistance, and safe transient draft handling. The backend remains responsible for validation and authorization.
 
-**Observed implementation:** `orca_mobile/lib/main.dart` is the Flutter entry point selected by `pubspec.yaml`. It uses in-memory `AppState`, seeded sample amounts, sample transactions, and explicit demo messages. `video_player` is the notable runtime package beyond Flutter. There are no HTTP, WebSocket, or persistent-data API packages configured in `pubspec.yaml`. `orca_mobile/docs/api-contract.md` is explicitly a **draft proposal**, not a deployed API contract. `orca_mobile/orca_mobile/main.dart` is a second, different copy of app code; which copy is intended for future work is **UNVERIFIED**. Treat `lib/main.dart` as the build entry point unless the Flutter package configuration changes.
+**Observed implementation:** `orca_mobile/lib/main.dart` is Flutter's default package entry point when running from `orca_mobile/`; `pubspec.yaml` does not define a custom entrypoint. It uses in-memory `AppState`, seeded sample amounts, sample transactions, and explicit demo messages. `video_player` is the notable runtime package beyond Flutter. There are no HTTP, WebSocket, or persistent-data API packages configured in `pubspec.yaml`. `orca_mobile/docs/api-contract.md` is explicitly a **draft proposal**, not a deployed API contract. `orca_mobile/orca_mobile/main.dart` is a second, different copy of app code; which copy is intended for future work is **UNVERIFIED**. Do not assume the duplicate is equivalent or selected.
 
 ### ORCA Cloud / central service — intended role of `orca_webserver/`
 
@@ -42,7 +52,7 @@ The production service should be the single authority and integration boundary f
 
 The service must make every financial or device-state transition transactionally and auditably. Payment confirmation must follow a verified payment-provider callback or reconciliation result, never a client assertion. TV restrictions and reactivation must follow approved contract and policy rules enforced server-side.
 
-**Observed implementation:** `orca_webserver/` currently contains `index.html` and `indexb.html` marketing pages, `orca-dashboard-demo-1.html`, images, and a video. The dashboard generates sample device/payment/alert data in browser JavaScript; its only observed persistent browser setting is its theme in `localStorage`. No API fetch, XHR, WebSocket, EventSource, server application, database, or provider integration was found in these pages. Therefore the folder name does not prove a running webserver. The backend implementation, hosting target, domain, Django/API service, database, and production state are **UNVERIFIED**.
+**Observed implementation:** `orca_webserver/` contains two marketing-page variants (`index.html`, `indexb.html`), the browser dashboard demo (`orca-dashboard-demo-1.html`), media assets, and a Django project. The marketing pages have no forms or API requests. The dashboard creates sample records in JavaScript; `localStorage` is used for the theme preference, not business records. The Django code has a custom user, Phase 2 domain models/migrations, transition services, health/readiness routes and local/fake adapters. `config/urls.py` registers `/healthz`, `/readyz`, and Django `/admin/`; it does not register the proposed `/api/v1/` product endpoints. No live provider connection or deployed service was verified. See `orca_webserver/docs/PHASE2_REPORT.md` and `docs/AI_REVIEW_TRACE.md`.
 
 ### ORCA TV — `orca_TVapp/`
 
@@ -52,7 +62,7 @@ The service must make every financial or device-state transition transactionally
 - Display clear recovery instructions without exposing customer account details or payment credentials.
 - Never accept payment, mark a payment confirmed, calculate arrears, or make an independent restriction decision.
 
-**Observed implementation:** The only TV project file is `orca_TVapp/orca-tv-demo-1.html`. It is a large-screen HTML/JavaScript simulator with in-memory state and developer controls for power, Wi-Fi, activation, payment, restricted state, and reset. The activation code is local demo state; pressing demo controls directly changes state. There is no hardware API, device identity, server request, broker connection, or real TV control. The final TV operating system, hardware/embedded-agent design, secure provisioning, and connectivity protocol are **UNVERIFIED**.
+**Observed implementation:** The only TV project source is `orca_TVapp/orca-tv-demo-1.html`. It is a large-screen HTML/JavaScript simulator with in-memory state and developer controls for power, Wi-Fi, activation, payment, restricted state, and reset. The activation code is local demo state; pressing controls directly changes state. There is no hardware API, device identity, server request, broker connection, persistence, or real TV control. The final TV operating system, hardware/embedded-agent design, secure provisioning, and connectivity protocol are **UNVERIFIED**.
 
 ## 3. Authority and ownership rules
 
@@ -69,6 +79,8 @@ The service must make every financial or device-state transition transactionally
 Use stable server IDs, timestamps, explicit enums, and `request_id` across interfaces. Do not use display names, phone numbers, or activation codes as object identity.
 
 ## 4. Intended communication topology
+
+The diagram below is the **target** topology, not a picture of current network traffic. At the reviewed commit the Flutter and HTML clients do not call the Django project. `config/urls.py` exposes only health/readiness and Django admin routes; no product API exists.
 
 ```mermaid
 flowchart LR
@@ -87,7 +99,7 @@ flowchart LR
 - The database is reachable only by the service. Mobile, TV, and static pages never connect to it directly.
 - The public marketing website can remain static and separately hosted. If it becomes an admin/customer application, it must use the same documented API and authorization boundaries.
 
-## 5. Core production flows
+## 5. Target production flows (not implemented)
 
 ### Customer payment
 
@@ -160,7 +172,7 @@ Proposed API contract requirements already captured in the mobile draft include 
 | Work area | Primary folder | Must coordinate with |
 |---|---|---|
 | Customer screens, app state, localization, mobile secure storage | `orca_mobile/` | API/backend for every server field and transition; payment owner for provider flow; TV owner for linking UX |
-| Customer/staff API, database, ledger, authentication, web/admin UI, audit, gateway adapter | Intended `orca_webserver/` service location | Mobile and TV clients; finance, gateway, device/security, operations |
+| Django foundation, future customer/staff API, database, ledger, authentication, web/admin UI, audit and gateway boundary | `orca_webserver/` | Mobile and TV clients; finance, gateway, device/security, operations |
 | TV interface, device provisioning, connection, command acknowledgement | `orca_TVapp/` (future TV project) | Backend/device protocol; mobile activation UX; hardware and customer-support owners |
 | Shared API/device schemas and architecture | Root docs and approved OpenAPI package (not present yet) | All three teams |
 
@@ -168,14 +180,14 @@ For each change, the owner must state which client/server versions it affects, A
 
 ## 10. Integration gates before production
 
-- [ ] Confirm the actual ORCA Cloud backend project, repository, framework, deployment, owner, domain, database, and environments. All are **UNVERIFIED** in this repo.
+- [ ] Keep the observed Django foundation in `orca_webserver/`; verify service ownership, Render project/domain, Supabase project/database, environment separation, and connectivity. Source configuration exists; hosted resources and operation are **UNVERIFIED**.
 - [ ] Approve customer/staff/device authentication and key lifecycle.
 - [ ] Approve financing ledger, amounts, statuses, payment provider, reconciliation, refunds/reversals, and webhook behavior.
 - [ ] Approve activation code/device provisioning, expiry, limits, and TV protocol.
 - [ ] Publish versioned OpenAPI and device protocol with server and client contract tests.
 - [ ] Replace all mobile sample data/actions with an explicit demo/live repository boundary; fail closed in live mode.
 - [ ] Replace TV simulator developer controls with the approved TV platform/device agent; never package demo controls into production firmware.
-- [ ] Implement backend/database and show migration, access-control, audit, backup/restore, monitoring, and recovery evidence.
+- [ ] Complete backend APIs and authorization, then show PostgreSQL migration/concurrency, audit, backup/restore, monitoring, and recovery evidence. Models/services exist, but customer workflows and production operations do not.
 - [ ] Validate installation, payment, link, offline/reconnect, device status, revocation, support, and rollback journeys using synthetic/staging accounts.
 - [ ] Run security, privacy, legal, accessibility, and production-readiness review before opening real customer traffic.
 

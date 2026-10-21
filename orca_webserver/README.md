@@ -1,60 +1,62 @@
-# ORCA web and central service foundation
+# ORCA Web and Cloud foundation
 
-This folder contains the ORCA public web and dashboard prototypes plus the Django server foundation. The Django service is still not production-ready: Phase 2 adds offline domain models, local/fake ports and adapters, state transitions, and image validation, but no public API, live provider integration, or production credentials.
+This folder combines two static website prototypes, a browser-only staff dashboard demo, and the Django ORCA Cloud foundation. The Django project is real source code, but it is not a production service: no customer/staff product API, implemented login flow, live payment/SMS/device integration, or verified deployment exists.
 
-See the root [system architecture](../SYSTEM-ARCHITECTURE.md) for the complete target architecture and interactions with mobile and TV.
-See [`docs/PHASE0_REPORT.md`](docs/PHASE0_REPORT.md), [`docs/DECISIONS.md`](docs/DECISIONS.md), and [`docs/PHASE1_REPORT.md`](docs/PHASE1_REPORT.md) for approved scope, decisions, and verification evidence.
-Read [`docs/PHASE2_REPORT.md`](docs/PHASE2_REPORT.md), [`docs/PORTS_AND_ADAPTERS.md`](docs/PORTS_AND_ADAPTERS.md), and [`docs/IMAGE_STORAGE.md`](docs/IMAGE_STORAGE.md) before extending the Phase 2 foundation.
+Cross-project architecture is in [`../SYSTEM-ARCHITECTURE.md`](../SYSTEM-ARCHITECTURE.md). For current implementation boundaries read [`docs/AI_REVIEW_TRACE.md`](docs/AI_REVIEW_TRACE.md), the phase reports, and [`../docs/decisions/README.md`](../docs/decisions/README.md).
 
-## Files currently present
+## Component inventory
 
-- `index.html` — public ORCA marketing page.
-- `indexb.html` — another public marketing-page variant. Which version is canonical for deployment is **UNVERIFIED**.
-- `orca-dashboard-demo-1.html` — browser dashboard demonstration with overview, device, payment, alert, partner, and audit-style views. It generates sample records locally in JavaScript. The only observed use of `localStorage` is the dashboard theme preference; business data is not fetched from an API.
-- `logo.png`, `orca-logo-B.png`, `orca-logo-w.png`, `bc2.png`, and `VID-20261015-WA0031.mp4` — visual/media assets. Their licensing, source-of-truth versions, and production use approval are **UNVERIFIED**.
-- `manage.py`, `config/`, and `apps/accounts/` — Phase 1 Django project skeleton. Only the custom `accounts.User` model is implemented; SMS OTP, staff TOTP, device credentials, and API permissions are deferred.
-- `render.yaml`, `requirements*.txt`, and `scripts/ci.sh` — Render draft, direct dependency pins, and local CI commands. The dependency set is not a complete hashed lock, the Render service was not created, and GitHub Actions cannot be placed under this folder-only write scope.
-- `docs/DECISIONS.md`, `docs/DEPLOY_RENDER.md`, and `docs/SUPABASE_DATA_API_LOCKDOWN.md` — approved decisions and human-operated deployment/security drafts. No live provider/database actions were run.
+| Component | Entry point | Current behavior and data | Status |
+|---|---|---|---|
+| Public marketing variant A | `index.html` | Standalone HTML/CSS. No form, fetch/XHR, or customer data persistence. Links/fonts may navigate/load externally. | Prototype; canonical page and hosting are **UNVERIFIED**. |
+| Public marketing variant B | `indexb.html` | A second standalone public page with a similar title but a different implementation. No form or API request observed. | Prototype; relationship to variant A is **UNVERIFIED**. Do not delete either file in a docs-only change. |
+| Staff dashboard | `orca-dashboard-demo-1.html` | Browser JavaScript generates sample devices/payments/alerts/partners/audit-like records. `localStorage` stores the theme preference; business records are not read from an API or persisted as server data. | Demo only; not authenticated or operational. |
+| Django ORCA Cloud | `manage.py`, `config/`, `apps/` | Phase 1 custom user and Phase 2 domain models, migrations, service helpers, local/fake adapters, health/readiness, and Django admin. | Implemented foundation; no product APIs or production proof. |
 
-The public pages' actual publishing host, form handling, analytics, canonical page, and production URLs are **UNVERIFIED**. The demo dashboard must not be represented as a live financial or device-control console.
+Assets include `logo.png`, `orca-logo-B.png`, `orca-logo-w.png`, `bc2.png`, and `VID-20261015-WA0031.mp4`. Asset provenance/license, canonical variants, and production use approval are **UNVERIFIED**.
 
-## Intended production responsibility
+## Django routes and data boundary
 
-The central ORCA Cloud service should own the API and data authority used by:
+`config/urls.py` currently registers:
 
-- `orca_mobile/` customer app for customer-specific profile, balances, appliances, payments, and TV linking.
-- `orca_TVapp/` device client for secure activation, appliance status, health, and server-authorized state changes.
-- Authorized staff/partner web interfaces for customer support, device and payment operations, alerts, audits, and approved administrative actions.
-- Payment provider webhooks and approved device-message channels.
+- `GET /healthz` — empty process health response.
+- `GET /readyz` — checks database availability and returns server mode.
+- `/admin/` — Django admin site; this is not the planned staff operations dashboard.
 
-The central service must own authentication and authorization, customer/appliance relationships, financing ledger, provider reconciliation, activation-code lifecycle, device identity/status, audit trail, API versioning, backups, monitoring, and support controls. The database must not be exposed to browser, Flutter, or TV clients. Payment callbacks and device messages require independent signature/authentication and replay protection.
+There are no customer, mobile, TV device, payment webhook, or staff product API routes. The Phase 2 domain models do not themselves expose data over HTTP. Browser HTML, Flutter and TV clients must never connect to the database directly.
 
-## Planned service boundaries
+The backend configuration reads environment variables; Django does not load `.env.example`. Settings split into `config/settings/base.py`, `local.py`, `test.py`, `postgres_test.py`, and `production.py`. Production requires shaped environment values and explicit database connection mode. `render.yaml` is a draft Blueprint nested in this subfolder. It has not been imported or deployed; see [`docs/DEPLOY_RENDER.md`](docs/DEPLOY_RENDER.md).
 
-A future implementation should separate logical modules even if they are initially deployed together:
+## Run the static pages
 
-1. Identity/session and role authorization.
-2. Customer profile, consent, and appliance ownership.
-3. Financing agreements and immutable payment ledger.
-4. Payment intent/provider adapter/webhook/reconciliation.
-5. TV/device registry, secure provisioning, activation/link workflow, telemetry, desired state, and acknowledgement.
-6. Staff dashboard API, audit, support actions, and safe reporting.
-7. Versioned OpenAPI contract for web/mobile clients and a separate authenticated device protocol.
+The static pages have no npm package or build step. With Python 3:
 
-The backend framework (Django), host (Render), and database provider (Supabase PostgreSQL, database only) are approved. Actual service URLs, Render/Supabase accounts, connection mode, credentials, plans, API hostname, payment merchant setup and production environment are **UNVERIFIED**. Do not create client assumptions from this list; read [`docs/DECISIONS.md`](docs/DECISIONS.md) and obtain the approved server contract in a later phase.
+```sh
+cd orca_webserver
+python3 -m http.server 8000
+```
 
-## Required communication patterns
+Open `/index.html`, `/indexb.html`, or `/orca-dashboard-demo-1.html` under `http://127.0.0.1:8000/`. This serves static files only; it does not start Django, enable authentication, or connect a database. The dashboard's local-storage theme is a browser preference, not customer-data persistence.
 
-- Customer and staff web clients use HTTPS JSON APIs with session/token authentication and server-side object authorization.
-- Payment providers call a dedicated signed webhook. Only reconciled server-side results update balances or entitlements.
-- TV devices use per-device credentials over TLS through the selected device channel. Cloud commands carry IDs/version/expiry and require acknowledgement.
-- TV linking and payment are mediated by the central service. The phone must not send payment success directly to a TV, and a TV must not accept an arbitrary browser command.
-- Use stable IDs, idempotency keys for retried writes, UTC timestamps, explicit status enums, privacy-safe errors, and correlation IDs.
+## Run the Django foundation locally
 
-Detailed customer endpoint proposal and open questions are in [`../orca_mobile/docs/api-contract.md`](../orca_mobile/docs/api-contract.md); it is not yet approved or implemented.
+From this folder, create a virtual environment and install declared direct dependencies:
 
-## Current implementation gates
+```sh
+python3 -m venv .venv
+. .venv/bin/activate
+pip install -r requirements-dev.txt
+python manage.py check --settings=config.settings.test
+python manage.py makemigrations --check --dry-run --settings=config.settings.test
+python manage.py test --settings=config.settings.test
+python manage.py migrate
+python manage.py runserver
+```
 
-Phase 1 added local/staging/production settings, initial custom-user migration, `/healthz`, `/readyz`, a server-side database URL parser, safe JSON request logs, a Render Blueprint draft, and local CI commands. Django tests use isolated SQLite; no Postgres or Supabase connection was tested. Before calling this a live webserver, add GitHub Actions after root-level scope approval, complete dependency audit/hash locking, select SMS vendor, implement approved auth/MFA and API/domain phases, verify Supabase lockdown/backups, and complete legal/security review. Keep marketing HTML static if appropriate, and keep demo fixtures separate from real customer data. Never reuse dashboard demo sample values as production defaults.
+`requirements.txt` and `requirements-dev.txt` are not generated hash-locked transitive requirements. Run tests against a disposable local database. PostgreSQL-only tests need a PostgreSQL server and `DJANGO_SETTINGS_MODULE=config.settings.postgres_test`; do not use production data. See [`../docs/testing.md`](../docs/testing.md) for recorded outcomes and limits.
 
-Coordinate breaking API changes with Flutter and TV owners. For each release, document compatible client versions, staged rollout, schema migration order, rollback, and test evidence in the root architecture/release notes.
+## Before production use
+
+Implement the approved API and object-level authorization; establish identity/session and staff roles; finish finance ledger semantics and provider reconciliation; provision and secure devices; add background work and monitoring; review privacy/legal obligations; create staging/production separately; prove PostgreSQL behavior and backup/restore; and establish support/incident ownership. Do not claim demo metrics or current Django models as live financial/device data.
+
+Related guides: [`docs/PORTS_AND_ADAPTERS.md`](docs/PORTS_AND_ADAPTERS.md), [`docs/IMAGE_STORAGE.md`](docs/IMAGE_STORAGE.md), [`docs/CI_SCOPE.md`](docs/CI_SCOPE.md), and [`docs/PHASE2_REPORT.md`](docs/PHASE2_REPORT.md).

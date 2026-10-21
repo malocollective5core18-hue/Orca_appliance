@@ -1,12 +1,19 @@
 # Move ORCA User Data to the Server
 
-**Status:** Implementation guide for the Flutter and Django developers. Pair this with [api-contract.md](api-contract.md), which contains the proposed API endpoints and response schemas. Both documents are drafts until ORCA approves the open product, authentication, and payment decisions.
+**Status:** **Future migration guide; no Flutter-to-Django data integration is implemented.** Pair this with [api-contract.md](api-contract.md), which is only a proposed API. Both remain drafts until product, identity, finance, security, and API owners approve the decisions and publish a versioned contract.
 
 ## Goal
 
 Replace fabricated, customer-specific values in the Flutter app with authenticated, customer-scoped values returned by ORCA Cloud. A signed-in customer should see their own name, accounts, financed appliances, amounts, due dates, device status, payment methods, and payment history. The server is authoritative; the app formats and presents its responses and submits user intent.
 
 This is a migration guide, not permission to invent the backend's financial rules or to label a simulated result as real.
+
+## Repository facts verified on 21 October 2026
+
+- Flutter's default package entry point is `lib/main.dart`; `pubspec.yaml` does not declare an alternate entry point. A different duplicate exists at `orca_mobile/main.dart`; it is not selected and was not deleted.
+- Demo values and simulated write behavior are held in `AppState` in memory. No HTTP client dependency is declared in `pubspec.yaml` and no API request code was found in the selected app entrypoint.
+- Django source exists under `orca_webserver/` and has domain models/services, but `config/urls.py` does not register customer or product API endpoints. `/healthz`, `/readyz`, and `/admin/` are not substitutes for a customer-data API.
+- Therefore the future target tables and API names below are planning aids, not a report that server integration has started. Preserve a clearly isolated demo path until a real contract is approved; never mix seeded values with live responses.
 
 ## Current hard-coded data and behavior
 
