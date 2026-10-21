@@ -1,11 +1,11 @@
 {% extends "accounts/base.html" %}{% block title %}Register system user · ORCA{% endblock %}{% block body %}
-<main><section class="card"><h1 data-en="Register a system user" data-sw="Sajili mtumiaji wa mfumo">Register a system user</h1><p data-en="Administrators can register customer service accounts only. Superusers can choose any account role." data-sw="Wasimamizi wanaweza kusajili akaunti za huduma kwa wateja pekee. Wasimamizi wakuu wanaweza kuchagua jukumu lolote.">Administrators can register customer service accounts only. Superusers can choose any account role.</p>
+<main class="registration-main"><section class="card registration-card"><h1 data-en="Register a system user" data-sw="Sajili mtumiaji wa mfumo">Register a system user</h1><p data-en="Administrators can register customer service accounts only. Superusers can choose any account role." data-sw="Wasimamizi wanaweza kusajili akaunti za huduma kwa wateja pekee. Wasimamizi wakuu wanaweza kuchagua jukumu lolote.">Administrators can register customer service accounts only. Superusers can choose any account role.</p>
 {% if created %}<p class="success" data-en="The account was created." data-sw="Akaunti imefunguliwa.">The account was created.</p>{% endif %}
-<form method="post" action="{% url 'accounts:register_staff' %}">{% csrf_token %}{% if form.non_field_errors %}<ul class="form-errors">{{ form.non_field_errors }}</ul>{% endif %}
-<label for="id_full_name" data-en="Full name" data-sw="Majina kamili">Full name</label>{{ form.full_name }}{{ form.full_name.errors }}
-<label for="id_email" data-en="Email" data-sw="Barua pepe">Email</label>{{ form.email }}{{ form.email.errors }}
-<label for="id_phone_number" data-en="Phone number" data-sw="Namba ya simu">Phone number</label>{{ form.phone_number }}{{ form.phone_number.errors }}
-<label for="id_role" data-en="Account role" data-sw="Jukumu la akaunti">Account role</label>{{ form.role }}{{ form.role.errors }}
-<label for="id_password" data-en="Initial password" data-sw="Nenosiri la kuanzia">Initial password</label>{{ form.password }}{{ form.password.errors }}
+<form class="registration-form" method="post" action="{% url 'accounts:register_staff' %}">{% csrf_token %}{% if form.non_field_errors %}<ul class="form-errors">{{ form.non_field_errors }}</ul>{% endif %}
+<div class="registration-field"><label for="id_full_name" data-en="Full name" data-sw="Majina kamili">Full name</label>{{ form.full_name }}{{ form.full_name.errors }}</div>
+<div class="registration-field"><label for="id_email" data-en="Email" data-sw="Barua pepe">Email</label>{{ form.email }}{{ form.email.errors }}</div>
+<div class="registration-field"><label for="id_phone_number" data-en="Phone number" data-sw="Namba ya simu">Phone number</label>{{ form.phone_number }}{{ form.phone_number.errors }}</div>
+<div class="registration-field"><label for="id_role" data-en="Account role" data-sw="Jukumu la akaunti">Account role</label>{{ form.role }}{{ form.role.errors }}</div>
+<div class="registration-field"><label for="id_password" data-en="Initial password" data-sw="Nenosiri la kuanzia">Initial password</label>{{ form.password }}{{ form.password.errors }}</div>
 <button class="submit" type="submit" data-en="Create account" data-sw="Fungua akaunti">Create account</button></form>
 <div class="links"><a class="button secondary" href="{% url 'accounts:dashboard' %}" data-en="Back to dashboard" data-sw="Rudi kwenye dashibodi">Back to dashboard</a></div></section></main>{% endblock %}
