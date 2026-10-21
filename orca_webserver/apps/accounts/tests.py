@@ -40,8 +40,8 @@ class HealthEndpointTests(TestCase):
 
     def test_readyz_returns_empty_response_when_database_is_available(self):
         response = self.client.get(reverse("readyz"))
-        self.assertEqual(response.status_code, 204)
-        self.assertEqual(response.content, b"")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {"server_mode": "demo"})
 
     @patch(
         "config.health.connection.ensure_connection",

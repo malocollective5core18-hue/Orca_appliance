@@ -3,12 +3,32 @@
 **Status:** Draft. No Render service, Supabase project, secret, build, migration, or deployment was
 created or changed in this phase.
 
+## Nested Blueprint path verified 21 October 2026
+
+Render's official docs say a Blueprint YAML file may live anywhere in the repository when its path
+is selected during Blueprint creation or changed in Blueprint settings. Without that selection,
+Render defaults to root `render.yaml`. The existing file is `orca_webserver/render.yaml`; select that
+exact path. Its `rootDir: orca_webserver` is a separate setting that makes build/start commands
+relative to the app folder. The dashboard configuration for this repository remains **UNVERIFIED**.
+
+- [Render Blueprints (IaC)](https://render.com/docs/infrastructure-as-code)
+- [Blueprints now support custom filenames and paths](https://render.com/changelog/blueprints-now-support-custom-filenames-and-paths)
+- [Render monorepo support](https://render.com/docs/monorepo-support)
+
+The custom path feature was announced 9 February 2026. Do not create a second root Blueprint that
+manages the same service.
+
+Phase 2 defaults select demo/local adapters. Render production settings now refuse to start unless
+`ALLOW_DEMO_BACKENDS=true` is explicitly supplied. Set it only for an owner-designated demo/staging
+service. No real payment, SMS, cloud storage, or MQTT adapter exists yet. Keep it unset/false for any
+service presented as live; startup then refuses until later approved real adapters are implemented.
+
 ## Before connecting a repository
 
 1. Confirm the repository is the intended ORCA repo and select `orca_webserver/render.yaml` as the
-   Blueprint file if Render allows a nested Blueprint path. Confirm service Root Directory is
-   `orca_webserver`. A repository-root Blueprint is normally auto-discovered; nested discovery is
-   **UNVERIFIED**. Do not make a root file without separate owner approval.
+   Blueprint path in Render. Confirm service Root Directory is `orca_webserver` in the dashboard.
+   The custom path is documented by Render; this repository's imported Blueprint configuration is
+   still **UNVERIFIED**. Do not make a root file without separate owner approval.
 2. Review the `starter` paid-plan draft against the approved budget and current Render pricing. Do not
    provision it until the owner accepts charges. Production must be paid and always on. Staging must
    be a separate Render service.

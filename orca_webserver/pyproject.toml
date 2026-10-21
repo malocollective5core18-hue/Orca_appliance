@@ -2,6 +2,7 @@
 DJANGO_SETTINGS_MODULE = "config.settings.test"
 python_files = ["test_*.py", "*_tests.py", "tests.py"]
 addopts = "-ra --strict-markers"
+markers = ["requires_postgres: exercises PostgreSQL locking and concurrency semantics"]
 
 [tool.coverage.run]
 branch = true

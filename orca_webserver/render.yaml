@@ -26,8 +26,16 @@ services:
         value: "false"
       - key: PAYMENTS_LIVE_ENABLED
         value: "false"
+      - key: PAYMENTS_PROVIDER
+        value: fake_clickpesa
+      - key: STORAGE_BACKEND
+        value: local
       - key: SMS_BACKEND
         value: console
+      - key: DEVICE_TRANSPORT
+        value: database
+      - key: ALLOW_DEMO_BACKENDS
+        sync: false
       - key: LOG_LEVEL
         value: INFO
       - key: DJANGO_SECRET_KEY

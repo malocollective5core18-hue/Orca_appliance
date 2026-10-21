@@ -4,8 +4,8 @@
 
 GitHub Actions discovers workflow YAML only in the repository-root `.github/workflows/` directory.
 GitHub CODEOWNERS is recognized at the repository root, `.github/CODEOWNERS`, or `docs/CODEOWNERS`;
-it is not recognized from `orca_webserver/CODEOWNERS`. A nested workflow or nested CODEOWNERS would
-look like a safeguard without providing the promised behavior, so neither is created.
+it is not recognized from `orca_webserver/CODEOWNERS`. Phase 2 stores explicitly non-active drafts in
+`docs/ci/`; they do not provide workflow execution or code ownership.
 
 ## Phase 1 local/CI command bundle
 
@@ -26,5 +26,5 @@ Python 3.14.8, install `orca_webserver/requirements-dev.txt`, run the equivalent
 and attach an isolated PostgreSQL service if PostgreSQL integration tests are introduced. Keep mobile
 and TV jobs independent. Add CODEOWNERS entries from the repository root for each owned directory.
 
-**Status:** local script exists; actual GitHub Actions, protected branch checks, and enforced code
-ownership are **NOT IMPLEMENTED** due the approved scope boundary.
+**Status:** local script and nested human-copy drafts exist; actual GitHub Actions, protected branch
+checks, and enforced code ownership are **NOT IMPLEMENTED** due the approved scope boundary.

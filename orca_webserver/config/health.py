@@ -1,5 +1,6 @@
 """Data-free process and database health endpoints."""
 
+import json
 import logging
 
 from django.db import DatabaseError, connection
@@ -20,7 +21,7 @@ def healthz(_request):
 @never_cache
 @require_GET
 def readyz(_request):
-    """Report database connectivity without exposing exception details."""
+    """Report database connectivity and server-selected mode without details or data."""
     try:
         connection.ensure_connection()
     except DatabaseError:
@@ -28,4 +29,10 @@ def readyz(_request):
             "database readiness failed", extra={"event": "database.readiness.failed"}
         )
         return HttpResponse(status=503)
-    return HttpResponse(status=204)
+    from django.conf import settings
+
+    return HttpResponse(
+        json.dumps({"server_mode": settings.SERVER_MODE}),
+        status=200,
+        content_type="application/json",
+    )

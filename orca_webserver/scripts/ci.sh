@@ -16,6 +16,7 @@ DATABASE_CONNECTION_MODE=session \
 ALLOWED_HOSTS=orca.example.invalid \
 CSRF_TRUSTED_ORIGINS=https://orca.example.invalid \
 PAYMENTS_LIVE_ENABLED=false \
+ALLOW_DEMO_BACKENDS=true \
 SMS_BACKEND=console \
 python manage.py check --deploy
 

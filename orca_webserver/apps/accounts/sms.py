@@ -1,5 +1,6 @@
 """Development-only SMS adapter. No real SMS provider is configured in Phase 1."""
 
+from dataclasses import dataclass
 from typing import Protocol
 
 from django.conf import settings
@@ -25,7 +26,25 @@ class ConsoleSMSBackend:
         print(f"[DEV SMS to {mask_phone_number(phone_number)}] {message}")
 
 
+@dataclass(frozen=True)
+class RecordedSms:
+    phone_number: str
+    message: str
+
+
+class RecordingSMSBackend:
+    """In-memory test adapter. It never sends or logs an SMS."""
+
+    def __init__(self):
+        self.records: list[RecordedSms] = []
+
+    def send(self, phone_number: str, message: str) -> None:
+        self.records.append(RecordedSms(phone_number=phone_number, message=message))
+
+
 def get_sms_backend() -> SMSBackend:
+    if settings.SMS_BACKEND == "recording":
+        return RecordingSMSBackend()
     if settings.SMS_BACKEND != "console":
         raise ImproperlyConfigured("No approved SMS provider is implemented")
     return ConsoleSMSBackend()

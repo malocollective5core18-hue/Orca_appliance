@@ -23,6 +23,17 @@ def env_csv(name: str, default: str = "") -> list[str]:
     return [item.strip() for item in os.environ.get(name, default).split(",") if item.strip()]
 
 
+def env_positive_int(name: str, default: int) -> int:
+    value = os.environ.get(name)
+    try:
+        result = int(value) if value is not None else default
+    except ValueError as exc:
+        raise ImproperlyConfigured(f"{name} must be a positive integer") from exc
+    if result <= 0:
+        raise ImproperlyConfigured(f"{name} must be a positive integer")
+    return result
+
+
 def database_from_url(url: str, *, require_ssl: bool = False) -> dict:
     parsed = urlsplit(url)
     if parsed.scheme not in {"postgres", "postgresql"}:
@@ -82,6 +93,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "apps.accounts.apps.AccountsConfig",
+    "apps.domain.apps.DomainConfig",
 ]
 
 MIDDLEWARE = [
@@ -147,7 +159,39 @@ SECURE_CONTENT_TYPE_NOSNIFF = True
 REFERRER_POLICY = "same-origin"
 
 PAYMENTS_LIVE_ENABLED = env_bool("PAYMENTS_LIVE_ENABLED", False)
-SMS_BACKEND = os.environ.get("SMS_BACKEND", "console")
+PAYMENTS_PROVIDER = os.environ.get("PAYMENTS_PROVIDER", "fake_clickpesa").strip().lower()
+STORAGE_BACKEND = os.environ.get("STORAGE_BACKEND", "local").strip().lower()
+SMS_BACKEND = os.environ.get("SMS_BACKEND", "console").strip().lower()
+DEVICE_TRANSPORT = os.environ.get("DEVICE_TRANSPORT", "database").strip().lower()
+ALLOW_DEMO_BACKENDS = env_bool("ALLOW_DEMO_BACKENDS", False)
+
+_backend_choices = {
+    "PAYMENTS_PROVIDER": ({"fake_clickpesa"}, PAYMENTS_PROVIDER),
+    "STORAGE_BACKEND": ({"local"}, STORAGE_BACKEND),
+    "SMS_BACKEND": ({"console", "recording"}, SMS_BACKEND),
+    "DEVICE_TRANSPORT": ({"database"}, DEVICE_TRANSPORT),
+}
+for _setting_name, (_allowed_values, _selected_value) in _backend_choices.items():
+    if _selected_value not in _allowed_values:
+        raise ImproperlyConfigured(
+            f"Unknown {_setting_name}={_selected_value!r}; allowed values are "
+            f"{', '.join(sorted(_allowed_values))}"
+        )
+
+DEMO_BACKENDS = {"fake_clickpesa", "local", "console", "recording"}
+SERVER_MODE = "demo" if any(
+    selected in DEMO_BACKENDS
+    for selected in (PAYMENTS_PROVIDER, STORAGE_BACKEND, SMS_BACKEND)
+) else "live"
+if SMS_BACKEND == "recording" and not DEBUG:
+    if not os.environ.get("DJANGO_SETTINGS_MODULE", "").endswith(".test"):
+        raise ImproperlyConfigured("The recording SMS backend is available only in DEBUG/test settings")
+if STORAGE_BACKEND == "local":
+    MEDIA_ROOT = Path(os.environ.get("MEDIA_ROOT", BASE_DIR / "media"))
+    MEDIA_URL = "/media/"
+IMAGE_MAX_BYTES = env_positive_int("IMAGE_MAX_BYTES", 10 * 1024 * 1024)
+IMAGE_MAX_DIMENSION = env_positive_int("IMAGE_MAX_DIMENSION", 8000)
+IMAGE_MAX_PIXELS = env_positive_int("IMAGE_MAX_PIXELS", 40_000_000)
 
 LOGGING = {
     "version": 1,

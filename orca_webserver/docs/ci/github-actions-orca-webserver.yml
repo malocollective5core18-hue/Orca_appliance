@@ -1,0 +1,62 @@
+name: ORCA webserver draft CI
+
+on:
+  pull_request:
+    paths:
+      - "orca_webserver/**"
+  push:
+    paths:
+      - "orca_webserver/**"
+
+jobs:
+  django-postgres:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: orca
+          POSTGRES_USER: orca
+          POSTGRES_PASSWORD: fake-ci-only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U orca -d orca"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    defaults:
+      run:
+        working-directory: orca_webserver
+    env:
+      DJANGO_SETTINGS_MODULE: config.settings.postgres_test
+      DATABASE_URL: postgresql://orca:fake-ci-only@127.0.0.1:5432/orca?sslmode=disable
+      ALLOW_DEMO_BACKENDS: "true"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14.8"
+          cache: pip
+          cache-dependency-path: orca_webserver/requirements-dev.lock
+      - run: python -m pip install --require-hashes -r requirements-dev.lock
+      - run: ruff check .
+      - run: ruff format --check --exclude 'apps/*/migrations/*.py' .
+      - run: python manage.py makemigrations --check --dry-run
+      - run: python manage.py test
+      - run: python manage.py test --tag=requires_postgres
+      - run: python manage.py check --deploy
+        env:
+          DJANGO_SETTINGS_MODULE: config.settings.production
+          DJANGO_SECRET_KEY: CI_TEST_VALUE_NOT_A_SECRET_0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ
+          ALLOWED_HOSTS: orca.example.invalid
+          CSRF_TRUSTED_ORIGINS: https://orca.example.invalid
+          DATABASE_CONNECTION_MODE: session
+          PAYMENTS_PROVIDER: fake_clickpesa
+          STORAGE_BACKEND: local
+          SMS_BACKEND: console
+          DEVICE_TRANSPORT: database
+          PAYMENTS_LIVE_ENABLED: "false"
+          ALLOW_DEMO_BACKENDS: "true"
+      - run: pip-audit -r requirements.lock
+      - run: python -m pytest --ds=config.settings.postgres_test --cov=apps --cov-report=term-missing

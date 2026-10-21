@@ -1,9 +1,10 @@
 # ORCA web and central service foundation
 
-This folder contains the ORCA public web and dashboard prototypes plus the Phase 1 Django server skeleton. The Django skeleton is not yet the production service: it has a custom account model, settings, health endpoints and deployment scaffolding, but no customer login, API, partner/finance/payment/device domain, or production credentials.
+This folder contains the ORCA public web and dashboard prototypes plus the Django server foundation. The Django service is still not production-ready: Phase 2 adds offline domain models, local/fake ports and adapters, state transitions, and image validation, but no public API, live provider integration, or production credentials.
 
 See the root [system architecture](../SYSTEM-ARCHITECTURE.md) for the complete target architecture and interactions with mobile and TV.
 See [`docs/PHASE0_REPORT.md`](docs/PHASE0_REPORT.md), [`docs/DECISIONS.md`](docs/DECISIONS.md), and [`docs/PHASE1_REPORT.md`](docs/PHASE1_REPORT.md) for approved scope, decisions, and verification evidence.
+Read [`docs/PHASE2_REPORT.md`](docs/PHASE2_REPORT.md), [`docs/PORTS_AND_ADAPTERS.md`](docs/PORTS_AND_ADAPTERS.md), and [`docs/IMAGE_STORAGE.md`](docs/IMAGE_STORAGE.md) before extending the Phase 2 foundation.
 
 ## Files currently present
 

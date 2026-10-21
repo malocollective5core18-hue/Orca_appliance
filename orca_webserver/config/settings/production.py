@@ -31,9 +31,14 @@ CSRF_TRUSTED_ORIGINS = env_csv("CSRF_TRUSTED_ORIGINS")
 if not ALLOWED_HOSTS or not CSRF_TRUSTED_ORIGINS:
     raise ImproperlyConfigured("ALLOWED_HOSTS and CSRF_TRUSTED_ORIGINS must be configured")
 if base.PAYMENTS_LIVE_ENABLED:
-    raise ImproperlyConfigured("Live payments are not implemented in Phase 1")
-if base.SMS_BACKEND != "console":
-    raise ImproperlyConfigured("An SMS provider is not approved or implemented yet")
+    raise ImproperlyConfigured("Live payments are not implemented in Phase 2")
+if base.SERVER_MODE == "demo" and not base.ALLOW_DEMO_BACKENDS:
+    raise ImproperlyConfigured(
+        "Demo or local backends are forbidden in production unless "
+        "ALLOW_DEMO_BACKENDS=true is explicitly set"
+    )
+if base.SMS_BACKEND == "recording":
+    raise ImproperlyConfigured("The recording SMS adapter cannot run in production")
 
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 SECURE_SSL_REDIRECT = True

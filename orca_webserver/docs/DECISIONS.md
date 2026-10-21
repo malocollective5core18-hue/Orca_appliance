@@ -1,7 +1,7 @@
 # ORCA Cloud decisions
 
-**Updated:** 20 October 2026. These ADRs record the owner's Phase 0 approval and Phase 1 scope.
-Phase 1 is a skeleton only. Decisions about payments, tenancy, and devices are not implementations.
+**Updated:** 21 October 2026. These ADRs record Phase 0/1 decisions and the authorized Phase 2
+offline foundation. No live external adapter or deployment is enabled.
 
 ## ADR-001 — Server location and repository scope
 
@@ -30,10 +30,11 @@ Phase 1 is a skeleton only. Decisions about payments, tenancy, and devices are n
 
 ## ADR-004 — Partner tenancy
 
-- **Date/status:** 20 October 2026 — Accepted design; implementation deferred to Phase 2.
+- **Date/status:** 20 October 2026 — Accepted; core schema implemented in Phase 2.
 - Use one PostgreSQL schema and partner rows. Every partner-scoped domain table must have a `Partner` foreign key.
 - Never provision tenants through process memory, a redeploy, or a process restart. Provisioning must be one retry-safe database transaction.
-- Phase 1 creates no `Partner` model and makes no tenancy claims.
+- Phase 1 created no `Partner` model. Phase 2 adds `Partner` and partner-scoped records. No API or
+  production tenant provisioning exists yet.
 
 ## ADR-005 — Ledger and restrictions
 
@@ -41,21 +42,24 @@ Phase 1 is a skeleton only. Decisions about payments, tenancy, and devices are n
 - Allocate payments to the oldest unpaid installment first. Allow partial payment; hold overpayment as credit for the next installment.
 - Require a reason, second approver, and audit event for manual refunds/reversals.
 - Store ledger and grace-policy rules as configuration. Do not implement automatic device restrictions before the business approves grace policy.
-- No ledger, payment, installment, or restriction code is part of Phase 1.
+- Phase 2 adds only the Payment/Installment records and lifecycle foundation; no ledger allocation,
+  automatic charge/refund, payment adapter, or device restriction business policy is implemented.
 
 ## ADR-006 — TV identity and pairing
 
 - **Date/status:** 20 October 2026 — Accepted with hardware dependency.
 - The TV requests a six-digit, single-use pairing code; the customer enters it in the mobile app.
 - Control-board serial as hardware identity is **UNVERIFIED** with the hardware team. Until confirmed, use a server-issued device ID provisioned server-side; store the serial as nullable.
-- Pairing and device records are deferred. No client-folder edits are authorized.
+- Phase 2 adds Device/PairingCode records and a tested state-transition service. Provisioning,
+  device authentication, pairing endpoints, and client-folder edits remain out of scope.
 
 ## ADR-007 — Device transport
 
 - **Date/status:** 20 October 2026 — Accepted for first release; implementation deferred.
 - Start with authenticated HTTPS heartbeat and status polling.
 - MQTT requires a separate ADR and owner approval of the broker.
-- Device commands and transport are out of Phase 1.
+- Phase 2 adds DeviceCommand metadata and an offline database polling adapter. Authenticated
+  heartbeat/poll endpoints remain Phase 3 work; MQTT still requires a separate ADR.
 
 ## ADR-008 — SMS vendor
 
@@ -77,7 +81,8 @@ Phase 1 is a skeleton only. Decisions about payments, tenancy, and devices are n
 ## ADR-010 — Health checks and monitoring
 
 - **Date/status:** 20 October 2026 — Accepted.
-- Provide data-free `/healthz` and database-checking `/readyz` now.
+- Provide empty `/healthz` and database-checking `/readyz`; Phase 2 `/readyz` returns only the
+  server-selected `server_mode` after a successful database check.
 - Do not add Sentry until the owner approves it. Logs use server-generated request IDs and redact arbitrary messages, URL paths, query strings, and payloads.
 
 ## ADR-011 — Privacy and legal gates
@@ -91,3 +96,38 @@ Phase 1 is a skeleton only. Decisions about payments, tenancy, and devices are n
 - **Date/status:** 20 October 2026 — Accepted research boundary.
 - Keep reference URLs and visible licenses in `LESSONS_AND_REFERENCES.md`.
 - Exact latest GitHub commits remain **UNVERIFIED** because clone/network access failed. Do not copy reference code.
+
+## ADR-013 — Offline ports and demo mode
+
+- **Date/status:** 21 October 2026 — Accepted for Phase 2 implementation.
+- Provider operations go through ports in `apps/ports/`; the only implementations are fake/local
+  adapters. No ClickPesa, Supabase, object storage, SMS vendor, or MQTT connection exists.
+- Unknown backend environment values fail at Django startup. Demo/local selection sets
+  `SERVER_MODE=demo`; production refuses it unless `ALLOW_DEMO_BACKENDS=true` is explicitly set.
+- `/healthz` remains empty. `/readyz` returns only `server_mode` after checking DB connectivity. A
+  client status API remains Phase 3 work.
+
+## ADR-014 — Product image visibility and object storage
+
+- **Date/status:** 21 October 2026 — Public-CDN recommendation recorded; owner approval pending.
+- Images are files in object storage. PostgreSQL stores `ImageAsset` metadata and storage keys only.
+- Keep incoming files private until validation/processing. Publish only staff-approved `READY`
+  product images. Keep customer/payment/device documents private.
+- First upload endpoint should be an authenticated staff server upload to private quarantine. Direct
+  signed uploads remain an alternative after bucket policy and finalize validation are designed.
+- Use an S3-compatible backend through `django-storages` only after separate approval. No cloud
+  backend is installed or enabled in Phase 2.
+
+## ADR-015 — Domain records and lifecycle
+
+- **Date/status:** 21 October 2026 — Phase 2 schema and service state machines implemented.
+- Add a single-schema Partner tenancy model; tenant-owned tables expose partner references and use
+  `PROTECT` deletes for business/audit history. Monetary amounts use integer TZS.
+- Define persisted statuses once in `apps/domain/statuses.py`; move payment, device command, and
+  pairing transitions through `apps/domain/services.py` and test allowed/rejected transitions.
+- Keep webhook payloads out of the database; persist provider/event id, hash, validity, status and
+  timestamps. Enforce event and idempotency uniqueness at the database layer.
+- Cross-partner relationship agreement is checked by PostgreSQL and SQLite triggers in migration
+  `0002_partner_scope_triggers.py`, with model `clean()` methods as an additional application-level
+  check. Tests cover ORM writes that bypass `full_clean()`. Public write services must still call
+  `full_clean()` and derive the partner identifier from the authorized principal.
