@@ -14,7 +14,7 @@
 | `/accounts/login/` | Public | Email/password login. Safe same-host `next` redirects are allowed. Otherwise redirects to `/accounts/dashboard/`. |
 | `/accounts/dashboard/` | Authenticated | Shows a responsive customer account for customers, or a staff workspace for non-customer roles. |
 | `/accounts/dashboard/register-user/` | Superuser or administrator | A superuser may create any supported role. An administrator may create only `customer_service`; submitted role choices are checked server-side. |
-| `/accounts/dashboard/operations/` | Authenticated staff | Opens the supplied interactive ORCA dashboard full-screen, including its Overview, Devices, Payments, Alerts, Partners, and Audit navigation. Below Audit, the expandable account menu links to Overview and, by role, Users and Django administration. On mobile, Audit log becomes the expandable bottom menu. Its values are sample data pending later integration. |
+| `/accounts/dashboard/operations/` | Authenticated staff | Opens the supplied interactive ORCA dashboard full-screen, including its Overview, Devices, Payments, Alerts, Partners, and Audit navigation. Below Audit, the expandable Account menu opens My account and the real Users registration form inside the dashboard. Superusers also get a DN admin link that opens Django admin in a new tab. On mobile, Audit log becomes the expandable bottom menu. Operations values are sample data pending later integration. |
 | `/accounts/logout/` | Authenticated, POST + CSRF | Ends the session and returns to the public landing page. |
 | `/admin/` | Superuser only | Django admin. Other authenticated staff receive 403. |
 
