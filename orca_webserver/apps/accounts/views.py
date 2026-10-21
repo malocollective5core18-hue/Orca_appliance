@@ -82,8 +82,11 @@ def operations_dashboard(request):
     users_url = reverse("accounts:register_staff") if (request.user.is_superuser or request.user.role == UserRole.ADMIN) else ""
     admin_url = reverse("admin:index") if request.user.is_superuser else ""
     account_nav = format_html(
-        '<nav aria-label="Main" id="nav" data-account-overview="{}" data-account-users="{}" data-django-admin="{}"></nav>',
-        reverse("accounts:dashboard"), users_url, admin_url,
+        '<nav aria-label="Main" id="nav" data-account-users="{}" data-django-admin="{}" data-user-name="{}" data-user-email="{}" data-user-phone="{}" data-user-role="{}"></nav>',
+        users_url, admin_url,
+        request.user.full_name or request.user.email or request.user.phone_number,
+        request.user.email, request.user.phone_number,
+        "Superuser" if request.user.is_superuser else request.user.get_role_display(),
     )
     page = page.replace('<nav aria-label="Main" id="nav"></nav>', str(account_nav), 1)
     return HttpResponse(page, content_type="text/html; charset=utf-8")
