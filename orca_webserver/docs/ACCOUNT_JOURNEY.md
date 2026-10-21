@@ -14,11 +14,11 @@
 | `/accounts/login/` | Public | Email/password login. Safe same-host `next` redirects are allowed. Otherwise redirects to `/accounts/dashboard/`. |
 | `/accounts/dashboard/` | Authenticated | Shows a responsive customer account for customers, or a staff workspace for non-customer roles. |
 | `/accounts/dashboard/register-user/` | Superuser or administrator | A superuser may create any supported role. An administrator may create only `customer_service`; submitted role choices are checked server-side. |
-| `/accounts/dashboard/operations/` | Authenticated staff | Embeds the supplied interactive ORCA dashboard demo, including its Overview, Devices, Payments, Alerts, Partners, and Audit navigation. Its values are sample data pending later integration. |
+| `/accounts/dashboard/operations/` | Authenticated staff | Opens the supplied interactive ORCA dashboard full-screen, including its Overview, Devices, Payments, Alerts, Partners, and Audit navigation. Below Audit, the expandable account menu links to Overview and, by role, Users and Django administration. On mobile, Audit log becomes the expandable bottom menu. Its values are sample data pending later integration. |
 | `/accounts/logout/` | Authenticated, POST + CSRF | Ends the session and returns to the public landing page. |
 | `/admin/` | Superuser only | Django admin. Other authenticated staff receive 403. |
 
-A customer-service user cannot create system accounts. The dashboard includes a role-aware navigation bar: administrators see Overview and Users; customer-service users see Overview only; only superusers see the Django administration link. Direct `/admin/` access for other authenticated users is denied by middleware. Public signup always assigns `customer`; the request cannot select a staff role.
+A customer-service user cannot create system accounts. The Operations sidebar contains the role-aware account menu: all staff can reach Overview, administrators and superusers can reach Users, and only superusers see Django administration. The separate dashboard navigation bar has been removed. Direct `/admin/` access for other authenticated users is denied by middleware. Public signup always assigns `customer`; the request cannot select a staff role.
 
 ## Data and integration boundary
 
