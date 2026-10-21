@@ -137,3 +137,6 @@ No Phase 2 work was started. No deployment, push, merge, or commit was made.
 - Mobile and TV agents should continue treating all current screens/data as demos. They must not call
   these Django health endpoints as product APIs or infer an auth/payment/device contract from the
   custom user model. Wait for an approved Phase 3 OpenAPI contract and device protocol.
+
+
+**Current decision register:** Phase 1 ADR history has been consolidated at the repository root in docs/decisions/README.md and docs/decisions/ADRS.md. This report preserves the original dated Phase 1 account; use the root index for current statuses.

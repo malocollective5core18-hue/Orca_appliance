@@ -60,3 +60,6 @@ Updated `README.md`, `DECISIONS.md`, `DEPENDENCY_REVIEW.md`, `DEPLOY_RENDER.md`,
 | Live integrations, Render deploy, Phase 3 API | Not run / out of scope |
 
 No hashed lock file generation, merge, deployment, or production-data access occurred. Phase 2 commit `adcc4e1` is published. Do not start Phase 3 until the owner reviews this report and supplies their verification results.
+
+
+**Current decision register:** Current decision statuses are maintained only at repository-root docs/decisions/README.md; detailed ADR history is at docs/decisions/ADRS.md. This report preserves its original Phase 2 record.
