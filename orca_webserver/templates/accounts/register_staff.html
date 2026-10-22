@@ -7,5 +7,6 @@
 <div class="registration-field"><label for="id_phone_number" data-en="Phone number" data-sw="Namba ya simu">Phone number</label>{{ form.phone_number }}{{ form.phone_number.errors }}</div>
 <div class="registration-field"><label for="id_role" data-en="Account role" data-sw="Jukumu la akaunti">Account role</label>{{ form.role }}{{ form.role.errors }}</div>
 <div class="registration-field"><label for="id_password" data-en="Initial password" data-sw="Nenosiri la kuanzia">Initial password</label>{{ form.password }}{{ form.password.errors }}</div>
+<div class="registration-field"><label for="id_confirm_password" data-en="Confirm password" data-sw="Thibitisha nenosiri">Confirm password</label>{{ form.confirm_password }}{{ form.confirm_password.errors }}</div>
 <button class="submit" type="submit" data-en="Create account" data-sw="Fungua akaunti">Create account</button></form>
 <div class="links"><a class="button secondary" href="{% url 'accounts:dashboard' %}" data-en="Back to dashboard" data-sw="Rudi kwenye dashibodi">Back to dashboard</a></div></section></main>{% endblock %}

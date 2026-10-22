@@ -1,10 +1,10 @@
 {% extends "accounts/base.html" %}{% block title %}Create account · ORCA{% endblock %}{% block body %}
 <main><section class="card"><h1 data-en="Create your customer account" data-sw="Fungua akaunti yako ya mteja">Create your customer account</h1><p data-en="Your account opens your personal customer screen. Staff accounts are created by authorized system users." data-sw="Akaunti yako itafungua ukurasa wako binafsi wa mteja. Akaunti za wafanyakazi hufunguliwa na wasimamizi walioidhinishwa.">Your account opens your personal customer screen. Staff accounts are created by authorized system users.</p>
-<form method="post">{% csrf_token %}{% if form.non_field_errors %}<ul class="form-errors">{{ form.non_field_errors }}</ul>{% endif %}
+<form method="post">{% csrf_token %}<input type="hidden" name="next" value="{{ next }}">{% if form.non_field_errors %}<ul class="form-errors">{{ form.non_field_errors }}</ul>{% endif %}
 <label for="id_full_name" data-en="Full name" data-sw="Majina kamili">Full name</label>{{ form.full_name }}{{ form.full_name.errors }}
 <label for="id_email" data-en="Email" data-sw="Barua pepe">Email</label>{{ form.email }}{{ form.email.errors }}
 <label for="id_phone_number" data-en="Phone number" data-sw="Namba ya simu">Phone number</label>{{ form.phone_number }}{{ form.phone_number.errors }}
 <label for="id_password" data-en="Password" data-sw="Nenosiri">Password</label>{{ form.password }}{{ form.password.errors }}
 <label for="id_confirm_password" data-en="Confirm password" data-sw="Thibitisha nenosiri">Confirm password</label>{{ form.confirm_password }}{{ form.confirm_password.errors }}
 <button class="submit" type="submit" data-en="Create account" data-sw="Fungua akaunti">Create account</button></form>
-<div class="links"><a class="button secondary" href="{% url 'accounts:login' %}" data-en="I already have an account" data-sw="Tayari nina akaunti">I already have an account</a></div></section></main>{% endblock %}
+<div class="links"><a class="button secondary" href="{% url 'accounts:login' %}{% if next %}?next={{ next|urlencode }}{% endif %}" data-en="I already have an account" data-sw="Tayari nina akaunti">I already have an account</a></div></section></main>{% endblock %}

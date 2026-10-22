@@ -83,6 +83,7 @@ class StaffRegistrationForm(forms.Form):
     phone_number = forms.CharField(max_length=32)
     role = forms.ChoiceField()
     password = forms.CharField(widget=forms.PasswordInput, min_length=8)
+    confirm_password = forms.CharField(widget=forms.PasswordInput, min_length=8)
 
     def __init__(self, *args, creator, **kwargs):
         self.creator = creator
@@ -111,6 +112,24 @@ class StaffRegistrationForm(forms.Form):
             raise forms.ValidationError("An account with this phone number already exists.")
         return phone
 
+    def clean(self):
+        cleaned = super().clean()
+        password = cleaned.get("password")
+        confirmation = cleaned.get("confirm_password")
+        if password and confirmation and password != confirmation:
+            self.add_error("confirm_password", "The passwords do not match.")
+        if password:
+            candidate = User(
+                email=cleaned.get("email"),
+                phone_number=cleaned.get("phone_number"),
+                full_name=cleaned.get("full_name", ""),
+            )
+            try:
+                validate_password(password, candidate)
+            except ValidationError as error:
+                self.add_error("password", error)
+        return cleaned
+
     def clean_role(self):
         role = self.cleaned_data["role"]
         if not self.creator.is_superuser and role != UserRole.CUSTOMER_SERVICE:
@@ -137,3 +156,74 @@ class StaffRegistrationForm(forms.Form):
             is_superuser=is_superuser,
             password=self.cleaned_data["password"],
         )
+
+
+class StaffUserUpdateForm(forms.Form):
+    full_name = forms.CharField(max_length=160)
+    email = forms.EmailField(max_length=254)
+    phone_number = forms.CharField(max_length=32)
+    role = forms.ChoiceField()
+    password = forms.CharField(widget=forms.PasswordInput, min_length=8, required=False)
+    confirm_password = forms.CharField(widget=forms.PasswordInput, min_length=8, required=False)
+
+    def __init__(self, *args, actor, target, **kwargs):
+        self.actor = actor
+        self.target = target
+        super().__init__(*args, **kwargs)
+        choices = [(UserRole.CUSTOMER_SERVICE, "Customer service")]
+        if actor.is_superuser:
+            choices = list(UserRole.choices)
+        self.fields["role"].choices = choices
+        if target.pk == actor.pk and actor.is_superuser:
+            self.fields["role"].choices = [(UserRole.SUPERUSER, "Superuser")]
+
+    def clean_email(self):
+        email = User.objects.normalize_email(self.cleaned_data["email"]).strip().lower()
+        if User.objects.filter(email__iexact=email).exclude(pk=self.target.pk).exists():
+            raise forms.ValidationError("An account with this email already exists.")
+        return email
+
+    def clean_phone_number(self):
+        phone = self.cleaned_data["phone_number"].strip()
+        if User.objects.filter(phone_number=phone).exclude(pk=self.target.pk).exists():
+            raise forms.ValidationError("An account with this phone number already exists.")
+        return phone
+
+    def clean(self):
+        cleaned = super().clean()
+        password = cleaned.get("password")
+        confirmation = cleaned.get("confirm_password")
+        if password or confirmation:
+            if not password:
+                self.add_error("password", "Enter a new password.")
+            if not confirmation:
+                self.add_error("confirm_password", "Confirm the new password.")
+            elif password and password != confirmation:
+                self.add_error("confirm_password", "The passwords do not match.")
+            if password:
+                try:
+                    validate_password(password, self.target)
+                except ValidationError as error:
+                    self.add_error("password", error)
+        return cleaned
+
+    def save(self):
+        target = self.target
+        role = self.cleaned_data["role"]
+        target.full_name = self.cleaned_data["full_name"].strip()
+        target.email = self.cleaned_data["email"]
+        target.phone_number = self.cleaned_data["phone_number"]
+        target.role = role
+        target.is_superuser = role == UserRole.SUPERUSER
+        target.is_staff = role in {
+            UserRole.SUPERUSER,
+            UserRole.ADMIN,
+            UserRole.CUSTOMER_SERVICE,
+            UserRole.FINANCE,
+            UserRole.SUPPORT,
+            UserRole.PARTNER_VIEWER,
+        }
+        if self.cleaned_data.get("password"):
+            target.set_password(self.cleaned_data["password"])
+        target.save()
+        return target

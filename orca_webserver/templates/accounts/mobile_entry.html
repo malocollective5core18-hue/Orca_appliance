@@ -1,0 +1,19 @@
+{% extends "accounts/base.html" %}{% block title %}ORCA mobile app · ORCA{% endblock %}{% block body %}
+<main class="wide"><section class="card">
+  <p class="muted" data-en="Signed in as" data-sw="Umeingia kama">Signed in as</p>
+  <h1>{{ user_name }}</h1>
+  <p data-en="Choose how you want to continue with ORCA." data-sw="Chagua jinsi unavyotaka kuendelea na ORCA.">Choose how you want to continue with ORCA.</p>
+  <div class="links mobile-choices">
+    <a class="button" href="{% url 'accounts:mobile_web' %}" data-en="Continue with web mobile" data-sw="Endelea na programu ya simu kwenye wavuti">Continue with web mobile</a>
+    <button class="button secondary" type="button" id="play-download" aria-describedby="play-status" data-en="Download from Google Play" data-sw="Pakua kutoka Google Play">Download from Google Play</button>
+  </div>
+  <p id="play-status" class="muted" role="status" aria-live="polite" data-en="Google Play download: Coming soon." data-sw="Upakuaji wa Google Play: Unakuja hivi karibuni.">Google Play download: Coming soon.</p>
+  <p class="muted" data-en="The web mobile preview currently uses sample account and payment data. No real payments or device actions are performed." data-sw="Mwonekano wa programu ya simu kwenye wavuti unatumia data ya mfano kwa sasa. Hakuna malipo au vitendo halisi vya kifaa vinavyofanyika.">The web mobile preview currently uses sample account and payment data. No real payments or device actions are performed.</p>
+</section></main>
+<script>
+document.getElementById('play-download').addEventListener('click', function () {
+  var status = document.getElementById('play-status');
+  status.textContent = document.documentElement.lang === 'sw' ? 'Google Play: Unakuja hivi karibuni.' : 'Google Play: Coming soon.';
+});
+</script>
+{% endblock %}
